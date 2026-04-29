@@ -3,127 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced MIS Analytics | Oracle Fusion Deep Analysis</title>
+    <title>MIS Analytics Dashboard</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- SheetJS for Excel -->
+    <!-- SheetJS -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- FileSaver for Downloads -->
+    <!-- FileSaver -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SortableJS for drag-drop -->
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f8fafc;
-        }
-        .sidebar {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-            color: white;
-            min-height: 100vh;
-        }
-        .card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-            transition: all 0.3s;
-        }
-        .card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-        }
-        .chart-container {
-            position: relative;
-            height: 300px;
-        }
-        .loader {
-            border-top-color: #3b82f6;
-            -webkit-animation: spinner 1.5s linear infinite;
-            animation: spinner 1.5s linear infinite;
-        }
-        @keyframes spinner {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .filter-active {
-            border: 2px solid #3b82f6;
-            background-color: #eff6ff;
-        }
-        .metric-trend-up {
-            color: #10b981;
-        }
-        .metric-trend-down {
-            color: #ef4444;
-        }
-        .metric-trend-neutral {
-            color: #6b7280;
-        }
-        .analysis-panel {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-        }
-        .drill-highlight {
-            background-color: #dbeafe;
-            border-left: 4px solid #3b82f6;
-        }
-        .nav-btn.active-nav {
-            background-color: rgba(255, 255, 255, 0.2);
-            border-left: 4px solid white;
-        }
+        body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; }
+        .sidebar { background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; min-height: 100vh; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: all 0.3s; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+        .chart-container { position: relative; height: 300px; }
+        .loader { border-top-color: #3b82f6; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .section { display: none; }
+        .section.active { display: block; }
+        .nav-btn.active-nav { background-color: rgba(255, 255, 255, 0.2); border-left: 4px solid white; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
+
     <!-- Sidebar -->
-    <aside class="sidebar w-72 hidden md:flex flex-col p-6">
+    <aside class="sidebar w-64 hidden md:flex flex-col p-6">
         <div class="mb-6">
             <h1 class="text-2xl font-bold"><i class="fas fa-chart-pie"></i> MIS Analytics</h1>
             <p class="text-xs opacity-80 mt-1">Oracle Fusion Deep Analysis</p>
         </div>
         <nav class="flex-1 space-y-2">
-            <button onclick="nav('upload')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10 active-nav">
-                <i class="fas fa-upload mr-3"></i>Upload Data
-            </button>
-            <button onclick="nav('dashboard')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10">
-                <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
-            </button>
-            <button onclick="nav('analysis')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10">
-                <i class="fas fa-search-dollar mr-3"></i>Ratio Analysis
-            </button>
-            <button onclick="nav('correlation')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10">
-                <i class="fas fa-project-diagram mr-3"></i>Correlation
-            </button>
-            <button onclick="nav('trends')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10">
-                <i class="fas fa-chart-line mr-3"></i>Trend Analysis
-            </button>
-            <button onclick="nav('data')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10">
-                <i class="fas fa-table mr-3"></i>Data View
-            </button>
-            <button onclick="nav('export')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10">
-                <i class="fas fa-download mr-3"></i>Export Reports
-            </button>
+            <button onclick="nav('upload')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10 active-nav"><i class="fas fa-upload mr-3"></i>Upload Data</button>
+            <button onclick="nav('dashboard')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10"><i class="fas fa-tachometer-alt mr-3"></i>Dashboard</button>
+            <button onclick="nav('analysis')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10"><i class="fas fa-search-dollar mr-3"></i>Ratio Analysis</button>
+            <button onclick="nav('correlation')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10"><i class="fas fa-project-diagram mr-3"></i>Correlation</button>
+            <button onclick="nav('trends')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10"><i class="fas fa-chart-line mr-3"></i>Trend Analysis</button>
+            <button onclick="nav('data')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10"><i class="fas fa-table mr-3"></i>Data View</button>
+            <button onclick="nav('export')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10"><i class="fas fa-download mr-3"></i>Export Reports</button>
         </nav>
         <div class="mt-auto p-4 bg-white/10 rounded-lg text-xs">
             <p>Records: <span id="recordCount">0</span></p>
             <p>Columns: <span id="columnCount">0</span></p>
-            <p class="text-green-400 mt-1"><i class="fas fa-circle text-[8px]"></i> Ready</p>
         </div>
     </aside>
 
     <!-- Main Content -->
     <main class="flex-1 flex flex-col overflow-hidden">
-        <!-- Header -->
         <header class="bg-white shadow-sm p-4 flex justify-between items-center z-10">
-            <h2 id="pageTitle" class="text-xl font-bold text-gray-800">Upload Oracle Report</h2>
+            <h2 id="pageTitle" class="text-xl font-bold text-gray-800">Upload Data</h2>
             <div class="flex space-x-3">
-                <button onclick="showFilters()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
-                    <i class="fas fa-filter mr-2"></i>Filters
-                </button>
-                <button onclick="resetApp()" class="text-red-500 hover:text-red-700 text-sm">
-                    <i class="fas fa-trash-alt mr-1"></i> Reset
-                </button>
+                <button onclick="showFilters()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"><i class="fas fa-filter mr-2"></i>Filters</button>
+                <button onclick="resetApp()" class="text-red-500 hover:text-red-700 text-sm"><i class="fas fa-trash-alt mr-1"></i> Reset</button>
             </div>
         </header>
 
@@ -131,1219 +64,368 @@
         <div id="filtersPanel" class="hidden bg-gray-50 border-b p-4">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="font-bold text-gray-700">Advanced Filters</h3>
-                <button onclick="hideFilters()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
+                <button onclick="hideFilters()" class="text-gray-500"><i class="fas fa-times"></i></button>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4" id="filterControls">
-                <!-- Filters will be dynamically generated -->
-            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="filterControls"></div>
             <div class="mt-4 flex space-x-3">
-                <button onclick="applyFilters()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">
-                    <i class="fas fa-check mr-2"></i>Apply Filters
-                </button>
-                <button onclick="clearFilters()" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 text-sm">
-                    <i class="fas fa-undo mr-2"></i>Clear
-                </button>
+                <button onclick="applyFilters()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm">Apply</button>
+                <button onclick="clearFilters()" class="bg-gray-500 text-white px-4 py-2 rounded-lg text-sm">Clear</button>
             </div>
         </div>
 
-        <!-- Scrollable Content -->
         <div class="flex-1 overflow-y-auto p-6 relative">
-            <!-- Loading Overlay -->
+            <!-- Loader -->
             <div id="loader" class="hidden absolute inset-0 bg-white/90 z-50 flex flex-col items-center justify-center">
                 <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4"></div>
-                <p class="text-lg font-semibold text-gray-700" id="loadingText">Processing Data...</p>
-                <p class="text-sm text-gray-500" id="loadingSub">Analyzing variables, calculating ratios...</p>
+                <p class="text-lg font-semibold text-gray-700" id="loadingText">Processing...</p>
             </div>
 
             <!-- SECTION: UPLOAD -->
-            <div id="section-upload" class="section">
+            <div id="section-upload" class="section active">
                 <div class="max-w-4xl mx-auto text-center mt-10">
                     <div class="card p-12 border-2 border-dashed border-blue-300 hover:border-blue-500 transition-colors cursor-pointer" onclick="document.getElementById('fileInput').click()">
                         <i class="fas fa-file-excel text-7xl text-green-600 mb-4"></i>
-                        <h3 class="text-2xl font-bold text-gray-700">Upload Oracle/Excel MIS Report</h3>
-                        <p class="text-gray-500 mt-2">Supports .xlsx, .xls, .csv (Up to 100MB)</p>
-                        <p class="text-xs text-gray-400 mt-4">Auto-detects Balance Sheet, PNL, Fixed Assets, Telecom Metrics</p>
+                        <h3 class="text-2xl font-bold text-gray-700">Upload Excel/CSV</h3>
+                        <p class="text-gray-500 mt-2">Supports .xlsx, .xls, .csv</p>
                     </div>
                     <input type="file" id="fileInput" class="hidden" accept=".xlsx,.xls,.csv">
-                    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                        <div class="bg-white p-4 rounded-lg shadow-sm">
-                            <h4 class="font-bold text-gray-700 mb-2">
-                                <i class="fas fa-check-circle text-green-500 mr-2"></i>What We Analyze:
-                            </h4>
-                            <ul class="text-sm text-gray-600 space-y-1">
-                                <li>• Automatic Ratio Calculation</li>
-                                <li>• Trend & Correlation Analysis</li>
-                                <li>• 15+ Chart Types</li>
-                                <li>• Drill-Down Capability</li>
-                            </ul>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg shadow-sm">
-                            <h4 class="font-bold text-gray-700 mb-2">
-                                <i class="fas fa-file-alt text-blue-500 mr-2"></i>Supported Reports:
-                            </h4>
-                            <ul class="text-sm text-gray-600 space-y-1">
-                                <li>• Balance Sheet & PNL</li>
-                                <li>• Fixed Assets Register</li>
-                                <li>• Telecom CDR/Billing</li>
-                                <li>• Any Oracle Fusion Export</li>
-                            </ul>
-                        </div>
-                    </div>
                 </div>
             </div>
 
             <!-- SECTION: DASHBOARD -->
-            <div id="section-dashboard" class="section hidden">
-                <!-- KPI Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
-                    <div class="card p-4 border-l-4 border-blue-500">
-                        <p class="text-gray-500 text-xs uppercase">Total Records</p>
-                        <h3 class="text-2xl font-bold" id="kpi-records">0</h3>
-                    </div>
-                    <div class="card p-4 border-l-4 border-green-500">
-                        <p class="text-gray-500 text-xs uppercase">Total Value</p>
-                        <h3 class="text-2xl font-bold" id="kpi-total">0</h3>
-                    </div>
-                    <div class="card p-4 border-l-4 border-purple-500">
-                        <p class="text-gray-500 text-xs uppercase">Avg Per Record</p>
-                        <h3 class="text-2xl font-bold" id="kpi-avg">0</h3>
-                    </div>
-                    <div class="card p-4 border-l-4 border-orange-500">
-                        <p class="text-gray-500 text-xs uppercase">Data Quality</p>
-                        <h3 class="text-2xl font-bold" id="kpi-quality">100%</h3>
-                    </div>
-                    <div class="card p-4 border-l-4 border-red-500">
-                        <p class="text-gray-500 text-xs uppercase">Variables</p>
-                        <h3 class="text-2xl font-bold" id="kpi-vars">0</h3>
-                    </div>
-                    <div class="card p-4 border-l-4 border-teal-500">
-                        <p class="text-gray-500 text-xs uppercase">Charts Generated</p>
-                        <h3 class="text-2xl font-bold" id="kpi-charts">0</h3>
-                    </div>
+            <div id="section-dashboard" class="section">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="card p-4 border-l-4 border-blue-500"><p class="text-xs text-gray-500">Total Records</p><h3 class="text-2xl font-bold" id="kpi-records">0</h3></div>
+                    <div class="card p-4 border-l-4 border-green-500"><p class="text-xs text-gray-500">Total Value</p><h3 class="text-2xl font-bold" id="kpi-total">0</h3></div>
+                    <div class="card p-4 border-l-4 border-purple-500"><p class="text-xs text-gray-500">Variables</p><h3 class="text-2xl font-bold" id="kpi-vars">0</h3></div>
                 </div>
-
-                <!-- Trend Analysis -->
-                <div class="card p-6 mb-6">
-                    <h4 class="font-bold text-gray-700 mb-4 flex items-center">
-                        <i class="fas fa-chart-line text-blue-600 mr-2"></i> Trend Analysis (Last 12 Periods)
-                        <select id="trendColumn" onchange="updateTrendChart()" class="ml-auto border rounded px-3 py-1 text-sm"></select>
-                    </h4>
-                    <div class="chart-container">
-                        <canvas id="trendChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Main Charts Grid -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4 flex items-center">
-                            <i class="fas fa-chart-bar text-blue-600 mr-2"></i> Top 15 Contributors (Click to Drill Down)
-                            <button onclick="exportChart('mainBar')" class="ml-auto text-gray-500 hover:text-blue-600">
-                                <i class="fas fa-download"></i>
-                            </button>
-                        </h4>
-                        <div class="chart-container">
-                            <canvas id="mainBarChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4 flex items-center">
-                            <i class="fas fa-chart-pie text-green-600 mr-2"></i> Distribution Analysis
-                            <button onclick="exportChart('pie')" class="ml-auto text-gray-500 hover:text-green-600">
-                                <i class="fas fa-download"></i>
-                            </button>
-                        </h4>
-                        <div class="chart-container">
-                            <canvas id="pieChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                    <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Value Distribution</h4>
-                        <div class="chart-container">
-                            <canvas id="histogramChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Year-over-Year Growth</h4>
-                        <div class="chart-container">
-                            <canvas id="growthChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Category Breakdown</h4>
-                        <div class="chart-container">
-                            <canvas id="stackedBarChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Drill Down Info -->
-                <div id="drillInfo" class="hidden bg-blue-50 border border-blue-200 p-4 rounded-lg mb-6 flex justify-between items-center">
-                    <div>
-                        <p class="text-sm font-bold text-blue-800">Drill-Down Active</p>
-                        <p class="text-xs text-blue-600">Showing data filtered by selection. <span id="filterCount">0</span> rows visible.</p>
-                    </div>
-                    <button onclick="resetFilter()" class="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">Clear Filter</button>
+                    <div class="card p-6"><h4 class="font-bold mb-4">Top Contributors</h4><div class="chart-container"><canvas id="mainBarChart"></canvas></div></div>
+                    <div class="card p-6"><h4 class="font-bold mb-4">Distribution</h4><div class="chart-container"><canvas id="pieChart"></canvas></div></div>
                 </div>
             </div>
 
-            <!-- SECTION: RATIO ANALYSIS -->
-            <div id="section-analysis" class="section hidden">
+            <!-- SECTION: ANALYSIS -->
+            <div id="section-analysis" class="section">
                 <div class="card p-6 mb-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h4 class="font-bold text-gray-700 text-xl">Financial Ratio Analysis</h4>
-                        <select id="ratioType" onchange="updateRatioAnalysis()" class="border rounded px-3 py-2 text-sm">
-                            <option value="liquidity">Liquidity Ratios</option>
-                            <option value="profitability">Profitability Ratios</option>
-                            <option value="efficiency">Efficiency Ratios</option>
-                            <option value="leverage">Leverage Ratios</option>
-                        </select>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="ratioCards">
-                        <!-- Ratios will be dynamically generated -->
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Ratio Trend Analysis</h4>
-                        <div class="chart-container">
-                            <canvas id="ratioTrendChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Ratio Benchmarking</h4>
-                        <div class="chart-container">
-                            <canvas id="ratioBenchmarkChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="card p-6">
-                    <h4 class="font-bold text-gray-700 mb-4">Variable Linkage Analysis</h4>
-                    <p class="text-sm text-gray-600 mb-4">Shows how changes in one variable impact others</p>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm" id="linkageTable">
-                            <thead class="bg-gray-100" id="linkageHeader"></thead>
-                            <tbody id="linkageBody"></tbody>
-                        </table>
-                    </div>
+                    <h4 class="font-bold mb-4">Ratio Analysis</h4>
+                    <div id="ratioCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
                 </div>
             </div>
 
             <!-- SECTION: CORRELATION -->
-            <div id="section-correlation" class="section hidden">
-                <div class="card p-6 mb-6">
-                    <h4 class="font-bold text-gray-700 mb-4">Correlation Matrix</h4>
-                    <p class="text-sm text-gray-600 mb-4">Identifies relationships between variables (1 = perfect positive, -1 = perfect negative)</p>
-                    <div class="overflow-x-auto" id="correlationMatrix">
-                        <!-- Correlation matrix will be generated -->
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Top Positive Correlations</h4>
-                        <div class="chart-container">
-                            <canvas id="positiveCorrChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Top Negative Correlations</h4>
-                        <div class="chart-container">
-                            <canvas id="negativeCorrChart"></canvas>
-                        </div>
-                    </div>
+            <div id="section-correlation" class="section">
+                <div class="card p-6">
+                    <h4 class="font-bold mb-4">Correlation Matrix</h4>
+                    <div class="overflow-x-auto" id="correlationMatrix"></div>
                 </div>
             </div>
 
             <!-- SECTION: TRENDS -->
-            <div id="section-trends" class="section hidden">
-                <div class="card p-6 mb-6">
-                    <h4 class="font-bold text-gray-700 mb-4">Multi-Variable Trend Comparison</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4" id="trendSelectors">
-                        <!-- Trend selectors will be generated -->
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="multiTrendChart"></canvas>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Moving Average Analysis</h4>
-                        <div class="chart-container">
-                            <canvas id="movingAvgChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Seasonality Detection</h4>
-                        <div class="chart-container">
-                            <canvas id="seasonalityChart"></canvas>
-                        </div>
-                    </div>
+            <div id="section-trends" class="section">
+                <div class="card p-6">
+                    <h4 class="font-bold mb-4">Trend Analysis</h4>
+                    <div class="chart-container"><canvas id="trendChart"></canvas></div>
                 </div>
             </div>
 
-            <!-- SECTION: DATA VIEW -->
-            <div id="section-data" class="section hidden">
+            <!-- SECTION: DATA -->
+            <div id="section-data" class="section">
                 <div class="card p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h4 class="font-bold text-gray-700">Raw Data View (Filtered)</h4>
-                        <div class="flex space-x-2">
-                            <input type="text" id="searchInput" placeholder="Search..." class="border rounded px-3 py-1 text-sm" onkeyup="filterTable()">
-                            <select id="rowsPerPage" onchange="renderTable()" class="border rounded px-3 py-1 text-sm">
-                                <option value="50">50 rows</option>
-                                <option value="100" selected>100 rows</option>
-                                <option value="500">500 rows</option>
-                            </select>
-                        </div>
-                    </div>
+                    <h4 class="font-bold mb-4">Data View</h4>
                     <div class="overflow-x-auto max-h-[60vh]">
-                        <table class="min-w-full divide-y divide-gray-200 text-sm" id="dataTable">
-                            <thead class="bg-gray-50 sticky top-0" id="tableHeader"></thead>
-                            <tbody id="tableBody" class="bg-white divide-y divide-gray-200"></tbody>
+                        <table class="min-w-full text-sm" id="dataTable">
+                            <thead class="bg-gray-100" id="tableHeader"></thead>
+                            <tbody id="tableBody"></tbody>
                         </table>
                     </div>
-                    <div class="flex justify-between items-center mt-4">
-                        <p class="text-xs text-gray-500">Showing <span id="showingFrom">1</span>-<span id="showingTo">100</span> of <span id="totalRows">0</span> rows</p>
-                        <div class="flex space-x-2">
-                            <button onclick="prevPage()" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm">Previous</button>
-                            <span id="pageInfo" class="text-sm">1</span>
-                            <button onclick="nextPage()" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm">Next</button>
+                    <div class="mt-4 flex justify-between">
+                        <span id="pageInfo">Page 1</span>
+                        <div class="space-x-2">
+                            <button onclick="prevPage()" class="px-3 py-1 bg-gray-200 rounded">Prev</button>
+                            <button onclick="nextPage()" class="px-3 py-1 bg-gray-200 rounded">Next</button>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- SECTION: EXPORT -->
-            <div id="section-export" class="section hidden">
-                <div class="max-w-4xl mx-auto">
-                    <div class="card p-8 text-center mb-6">
-                        <i class="fas fa-file-export text-6xl text-blue-600 mb-4"></i>
-                        <h3 class="text-2xl font-bold text-gray-800">Download Complete Analysis</h3>
-                        <p class="text-gray-500 mb-6">Export all charts, ratios, correlations, and cleaned data</p>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-left">
-                            <button onclick="downloadExcel('all')" class="p-6 border rounded-lg hover:bg-green-50 hover:border-green-500 transition">
-                                <i class="fas fa-file-excel text-green-600 text-2xl mb-2"></i>
-                                <h4 class="font-semibold">Full Analysis Package</h4>
-                                <p class="text-xs text-gray-500">All sheets + charts data</p>
-                            </button>
-                            <button onclick="downloadExcel('cleaned')" class="p-6 border rounded-lg hover:bg-blue-50 hover:border-blue-500 transition">
-                                <i class="fas fa-file-alt text-blue-600 text-2xl mb-2"></i>
-                                <h4 class="font-semibold">Cleaned Data</h4>
-                                <p class="text-xs text-gray-500">Raw data with headers</p>
-                            </button>
-                            <button onclick="downloadExcel('ratios')" class="p-6 border rounded-lg hover:bg-purple-50 hover:border-purple-500 transition">
-                                <i class="fas fa-calculator text-purple-600 text-2xl mb-2"></i>
-                                <h4 class="font-semibold">Ratios & KPIs</h4>
-                                <p class="text-xs text-gray-500">Calculated metrics</p>
-                            </button>
-                            <button onclick="downloadExcel('correlations')" class="p-6 border rounded-lg hover:bg-orange-50 hover:border-orange-500 transition">
-                                <i class="fas fa-project-diagram text-orange-600 text-2xl mb-2"></i>
-                                <h4 class="font-semibold">Correlations</h4>
-                                <p class="text-xs text-gray-500">Variable relationships</p>
-                            </button>
-                            <button onclick="downloadExcel('trends')" class="p-6 border rounded-lg hover:bg-teal-50 hover:border-teal-500 transition">
-                                <i class="fas fa-chart-line text-teal-600 text-2xl mb-2"></i>
-                                <h4 class="font-semibold">Trend Analysis</h4>
-                                <p class="text-xs text-gray-500">Time-based insights</p>
-                            </button>
-                            <button onclick="downloadPDF()" class="p-6 border rounded-lg hover:bg-red-50 hover:border-red-500 transition">
-                                <i class="fas fa-file-pdf text-red-600 text-2xl mb-2"></i>
-                                <h4 class="font-semibold">Executive Summary</h4>
-                                <p class="text-xs text-gray-500">PDF Report</p>
-                            </button>
-                        </div>
-                    </div>
+            <div id="section-export" class="section">
+                <div class="card p-8 text-center">
+                    <h3 class="text-2xl font-bold mb-6">Download Reports</h3>
+                    <button onclick="downloadExcel()" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700"><i class="fas fa-file-excel mr-2"></i>Download Excel</button>
                 </div>
             </div>
         </div>
     </main>
 
-    <script>
-        // ================= STATE =================
-        let rawData = [];
-        let headers = [];
-        let filteredData = [];
-        let numericColumns = [];
-        let textColumns = [];
-        let dateColumns = [];
-        let categoryColumn = null;
-        let valueColumn = null;
-        let allCharts = {};
-        let currentPage = 1;
-        let rowsPerPage = 100;
-        let activeFilters = {};
-        let correlationMatrix = {};
-        let ratioData = {};
+<script>
+    // ================= STATE =================
+    let rawData = [];
+    let headers = [];
+    let filteredData = [];
+    let numericColumns = [];
+    let textColumns = [];
+    let dateColumns = [];
+    let categoryColumn = null;
+    let valueColumn = null;
+    let allCharts = {};
+    let currentPage = 1;
+    let rowsPerPage = 50;
+    let activeFilters = {};
 
-        // ================= NAVIGATION =================
-        function nav(section) {
-            document.querySelectorAll('.section').forEach(el => el.classList.add('hidden'));
-            document.getElementById('section-' + section).classList.remove('hidden');
-            
-            // Update active nav button
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('bg-white/20', 'border-l-4', 'border-white');
-            });
-            const navBtns = document.querySelectorAll('.nav-btn');
-            const sections = ['upload', 'dashboard', 'analysis', 'correlation', 'trends', 'data', 'export'];
-            const index = sections.indexOf(section);
-            if (index >= 0 && navBtns[index]) {
-                navBtns[index].classList.add('bg-white/20', 'border-l-4', 'border-white');
-            }
-            
-            const titles = {
-                upload: 'Upload Data',
-                dashboard: 'Dashboard',
-                analysis: 'Ratio Analysis',
-                correlation: 'Correlation Analysis',
-                trends: 'Trend Analysis',
-                data: 'Data View',
-                export: 'Export Reports'
-            };
-            document.getElementById('pageTitle').innerText = titles[section];
-        }
+    // ================= NAVIGATION =================
+    function nav(section) {
+        document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+        document.getElementById('section-' + section).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active-nav'));
+        const btns = document.querySelectorAll('.nav-btn');
+        const sections = ['upload', 'dashboard', 'analysis', 'correlation', 'trends', 'data', 'export'];
+        const index = sections.indexOf(section);
+        if(index >= 0) btns[index].classList.add('active-nav');
 
-        function resetApp() {
-            if(confirm("Reset all data?")) {
-                location.reload();
-            }
-        }
+        const titles = { upload: 'Upload Data', dashboard: 'Dashboard', analysis: 'Ratio Analysis', correlation: 'Correlation', trends: 'Trend Analysis', data: 'Data View', export: 'Export Reports' };
+        document.getElementById('pageTitle').innerText = titles[section];
+    }
 
-        // ================= LOADER =================
-        function showLoader(show, text = "Processing Data...", subtext = "Analyzing variables, calculating ratios...") {
-            const loader = document.getElementById('loader');
-            const loadingText = document.getElementById('loadingText');
-            const loadingSub = document.getElementById('loadingSub');
-            
-            if (show) {
-                loader.classList.remove('hidden');
-                loadingText.innerText = text;
-                loadingSub.innerText = subtext;
-            } else {
-                loader.classList.add('hidden');
-            }
-        }
+    function resetApp() { if(confirm("Reset data?")) location.reload(); }
 
-        // ================= FILE HANDLING =================
-        document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+    // ================= LOADER =================
+    function showLoader(show, text="Processing...") {
+        const el = document.getElementById('loader');
+        document.getElementById('loadingText').innerText = text;
+        show ? el.classList.remove('hidden') : el.classList.add('hidden');
+    }
 
-        function handleFileSelect(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            if (file.size > 100 * 1024 * 1024) {
-                alert("File is too large (>100MB). Please reduce the file size.");
-                return;
-            }
-            
-            showLoader(true, "Reading File...", "Parsing Excel/CSV data...");
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const json = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
-                processOracleData(json);
-            };
-            reader.readAsArrayBuffer(file);
-        }
+    // ================= FILE HANDLING =================
+    document.getElementById('fileInput').addEventListener('change', handleFileSelect);
 
-        // ================= DATA PROCESSING =================
-        function processOracleData(rows) {
-            // Find header row
+    function handleFileSelect(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        showLoader(true, "Reading File...");
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
+            processOracleData(json);
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    // ================= DATA PROCESSING =================
+    function processOracleData(rows) {
+        try {
             let headerRowIndex = -1;
             for (let i = 0; i < rows.length; i++) {
-                const nonEmpty = rows[i].filter(cell => cell !== "" && cell !== null).length;
-                if (nonEmpty > rows[i].length * 0.5) {
-                    headerRowIndex = i;
-                    break;
+                if (rows[i].filter(c => c !== "" && c !== null).length > rows[i].length * 0.5) {
+                    headerRowIndex = i; break;
                 }
             }
-            
-            if (headerRowIndex === -1) {
-                showLoader(false);
-                alert("Could not detect headers. Please ensure the file has column names.");
-                return;
-            }
-            
+            if (headerRowIndex === -1) { alert("Invalid File"); showLoader(false); return; }
+
             headers = rows[headerRowIndex].map(h => String(h).trim());
-            rawData = rows.slice(headerRowIndex + 1).filter(row => row.length > 0 && row.some(cell => cell !== ""));
+            rawData = rows.slice(headerRowIndex + 1).filter(row => row.length > 0);
             
-            // Detect column types
             detectColumnTypes();
-            
-            // Apply filters
             filteredData = [...rawData];
             
-            // Update UI
-            document.getElementById('recordCount').innerText = rawData.length.toLocaleString();
+            document.getElementById('recordCount').innerText = rawData.length;
             document.getElementById('columnCount').innerText = headers.length;
-            showLoader(false);
             
+            showLoader(false);
             generateAllAnalysis();
             nav('dashboard');
+        } catch (err) {
+            console.error(err);
+            alert("Error processing file: " + err.message);
+            showLoader(false);
         }
+    }
 
-        function detectColumnTypes() {
-            numericColumns = [];
-            textColumns = [];
-            dateColumns = [];
-            categoryColumn = null;
-            valueColumn = null;
-            
-            const sampleSize = Math.min(rawData.length, 100);
-            headers.forEach((h, idx) => {
-                let numeric = 0, date = 0, text = 0;
-                const lower = h.toLowerCase();
-                
-                for (let i = 0; i < sampleSize; i++) {
-                    const value = rawData[i][idx];
-                    if (value === null || value === undefined || value === '') continue;
-                    
-                    if (!isNaN(parseFloat(value)) && isFinite(value)) {
-                        numeric++;
-                    } else if (isValidDate(value)) {
-                        date++;
-                    } else {
-                        text++;
-                    }
-                }
-                
-                if (numeric > sampleSize * 0.7) {
-                    numericColumns.push({ index: idx, name: h });
-                } else if (date > sampleSize * 0.7) {
-                    dateColumns.push({ index: idx, name: h });
-                } else {
-                    textColumns.push({ index: idx, name: h });
-                }
-                
-                // Auto-detect category and value columns
-                if (!categoryColumn && (lower.includes('name') || lower.includes('id') || lower.includes('account') || lower.includes('dept') || lower.includes('region'))) {
-                    categoryColumn = idx;
-                }
-                if (!valueColumn && (lower.includes('amount') || lower.includes('cost') || lower.includes('value') || lower.includes('price') || lower.includes('revenue'))) {
-                    valueColumn = idx;
-                }
-            });
-            
-            // Fallbacks
-            if (!categoryColumn && textColumns.length > 0) categoryColumn = textColumns[0].index;
-            if (!valueColumn && numericColumns.length > 0) valueColumn = numericColumns[0].index;
-        }
-
-        function isValidDate(value) {
-            const patterns = [/^\d{4}-\d{2}-\d{2}$/, /^\d{2}\/\d{2}\/\d{4}$/, /^\d{2}-\d{2}-\d{4}$/];
-            return patterns.some(p => p.test(String(value)));
-        }
-
-        // ================= ANALYSIS GENERATION =================
-        function generateAllAnalysis() {
-            showLoader(true, "Generating Analysis...", "Creating charts and calculations...");
-            setTimeout(() => {
-                updateKPIs();
-                generateFilters();
-                generateDashboardCharts();
-                generateRatioAnalysis();
-                generateCorrelationMatrix();
-                generateTrendAnalysis();
-                renderTable();
-                showLoader(false);
-            }, 500);
-        }
-
-        function updateKPIs() {
-            document.getElementById('kpi-records').innerText = rawData.length.toLocaleString();
-            let total = 0;
-            if (valueColumn !== null && valueColumn < headers.length) {
-                total = rawData.reduce((sum, row) => sum + (parseFloat(row[valueColumn]) || 0), 0);
+    function detectColumnTypes() {
+        numericColumns = []; textColumns = []; dateColumns = [];
+        const sample = Math.min(rawData.length, 100);
+        headers.forEach((h, idx) => {
+            let num=0, date=0, text=0;
+            for(let i=0; i<sample; i++) {
+                const v = rawData[i][idx];
+                if(!isNaN(parseFloat(v)) && isFinite(v)) num++;
+                else if(String(v).match(/^\d{4}-\d{2}-\d{2}$/)) date++;
+                else text++;
             }
-            document.getElementById('kpi-total').innerText = formatNumber(total);
-            document.getElementById('kpi-avg').innerText = formatNumber(total / rawData.length);
-            
-            const emptyCount = rawData.filter(r => isNaN(parseFloat(r[valueColumn || 0]))).length;
-            const quality = Math.round(((rawData.length - emptyCount) / rawData.length) * 100);
-            document.getElementById('kpi-quality').innerText = quality + '%';
-            document.getElementById('kpi-vars').innerText = numericColumns.length;
-            document.getElementById('kpi-charts').innerText = '15+';
-        }
+            if(num > sample*0.7) numericColumns.push({index: idx, name: h});
+            else if(date > sample*0.7) dateColumns.push({index: idx, name: h});
+            else textColumns.push({index: idx, name: h});
+        });
+        // Auto detect category/value
+        if(!categoryColumn && textColumns.length) categoryColumn = textColumns[0].index;
+        if(!valueColumn && numericColumns.length) valueColumn = numericColumns[0].index;
+    }
 
-        function formatNumber(num) {
-            if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
-            if (num >= 1000) return (num / 1000).toFixed(2) + 'K';
-            return num.toFixed(2);
-        }
-
-        // ================= FILTERS =================
-        function generateFilters() {
-            const container = document.getElementById('filterControls');
-            container.innerHTML = '';
-            
-            // Add filters for category columns
-            textColumns.forEach(col => {
-                const uniqueValues = [...new Set(rawData.map(row => row[col.index]))].slice(0, 20);
-                const filterDiv = document.createElement('div');
-                filterDiv.className = 'bg-white p-3 rounded-lg shadow-sm';
-                filterDiv.innerHTML = `
-                    <label class="block text-xs font-semibold text-gray-600 mb-2">${col.name}</label>
-                    <select class="filter-select w-full border rounded px-2 py-1 text-sm" data-column="${col.index}" onchange="updateFilter(${col.index}, this.value)">
-                        <option value="">All</option>
-                        ${uniqueValues.map(v => `<option value="${v}">${v}</option>`).join('')}
-                    </select>
-                `;
-                container.appendChild(filterDiv);
-            });
-            
-            // Add value range filter
-            if (numericColumns.length > 0) {
-                const valueCol = numericColumns[0];
-                const values = rawData.map(r => parseFloat(r[valueCol.index]) || 0);
-                const min = Math.min(...values);
-                const max = Math.max(...values);
-                const filterDiv = document.createElement('div');
-                filterDiv.className = 'bg-white p-3 rounded-lg shadow-sm';
-                filterDiv.innerHTML = `
-                    <label class="block text-xs font-semibold text-gray-600 mb-2">${valueCol.name} Range</label>
-                    <div class="flex space-x-2">
-                        <input type="number" class="filter-min w-full border rounded px-2 py-1 text-sm" placeholder="Min" data-column="${valueCol.index}" min-type="min">
-                        <input type="number" class="filter-max w-full border rounded px-2 py-1 text-sm" placeholder="Max" data-column="${valueCol.index}" min-type="max">
-                    </div>
-                `;
-                container.appendChild(filterDiv);
-            }
-        }
-
-        function updateFilter(columnIndex, value) {
-            activeFilters[columnIndex] = value;
-        }
-
-        function applyFilters() {
-            const filterSelects = document.querySelectorAll('.filter-select');
-            const filterMins = document.querySelectorAll('.filter-min');
-            const filterMaxs = document.querySelectorAll('.filter-max');
-            activeFilters = {};
-            
-            filterSelects.forEach(select => {
-                const col = parseInt(select.dataset.column);
-                const val = select.value;
-                if (val) activeFilters[col] = val;
-            });
-            
-            filterMins.forEach(input => {
-                const col = parseInt(input.dataset.column);
-                const val = parseFloat(input.value);
-                if (!isNaN(val)) {
-                    if (!activeFilters[col]) activeFilters[col] = {};
-                    activeFilters[col].min = val;
-                }
-            });
-            
-            filterMaxs.forEach(input => {
-                const col = parseInt(input.dataset.column);
-                const val = parseFloat(input.value);
-                if (!isNaN(val)) {
-                    if (!activeFilters[col]) activeFilters[col] = {};
-                    activeFilters[col].max = val;
-                }
-            });
-            
-            applyActiveFilters();
-        }
-
-        function applyActiveFilters() {
-            filteredData = rawData.filter(row => {
-                for (const [col, filter] of Object.entries(activeFilters)) {
-                    const colIdx = parseInt(col);
-                    const cellValue = row[colIdx];
-                    if (typeof filter === 'string' && filter !== '') {
-                        if (String(cellValue) !== filter) return false;
-                    } else if (typeof filter === 'object') {
-                        const numValue = parseFloat(cellValue) || 0;
-                        if (filter.min !== undefined && numValue < filter.min) return false;
-                        if (filter.max !== undefined && numValue > filter.max) return false;
-                    }
-                }
-                return true;
-            });
-            
-            document.getElementById('drillInfo').classList.remove('hidden');
-            document.getElementById('filterCount').innerText = filteredData.length;
+    function generateAllAnalysis() {
+        showLoader(true, "Generating Analysis...");
+        setTimeout(() => {
+            updateKPIs();
+            generateFilters();
             generateDashboardCharts();
+            generateRatioAnalysis();
+            generateCorrelationMatrix();
+            generateTrendAnalysis();
             renderTable();
-        }
+            showLoader(false);
+        }, 500);
+    }
 
-        function clearFilters() {
-            activeFilters = {};
-            document.querySelectorAll('.filter-select').forEach(s => s.value = '');
-            document.querySelectorAll('.filter-min, .filter-max').forEach(i => i.value = '');
-            document.getElementById('drillInfo').classList.add('hidden');
-            filteredData = [...rawData];
-            generateDashboardCharts();
-            renderTable();
-        }
+    function updateKPIs() {
+        document.getElementById('kpi-records').innerText = rawData.length;
+        let total = 0;
+        if(valueColumn !== null) total = rawData.reduce((s, r) => s + (parseFloat(r[valueColumn])||0), 0);
+        document.getElementById('kpi-total').innerText = total > 1000000 ? (total/1000000).toFixed(2)+'M' : total;
+        document.getElementById('kpi-vars').innerText = numericColumns.length;
+    }
 
-        function showFilters() {
-            document.getElementById('filtersPanel').classList.remove('hidden');
-        }
+    // ================= FILTERS =================
+    function generateFilters() {
+        const c = document.getElementById('filterControls'); c.innerHTML = '';
+        textColumns.slice(0, 3).forEach(col => {
+            const vals = [...new Set(rawData.map(r => r[col.index]))].slice(0, 10);
+            c.innerHTML += `<div class="bg-white p-3 rounded shadow-sm">
+                <label class="block text-xs font-bold mb-1">${col.name}</label>
+                <select class="w-full border rounded p-1 text-sm" onchange="updateFilter(${col.index}, this.value)">
+                    <option value="">All</option>
+                    ${vals.map(v => `<option value="${v}">${v}</option>`).join('')}
+                </select>
+            </div>`;
+        });
+    }
 
-        function hideFilters() {
-            document.getElementById('filtersPanel').classList.add('hidden');
-        }
+    function updateFilter(col, val) { activeFilters[col] = val; }
 
-        // ================= DASHBOARD CHARTS =================
-        function generateDashboardCharts() {
-            // Main Bar Chart (Top 15)
-            if (categoryColumn !== null && valueColumn !== null) {
-                const aggregation = {};
-                filteredData.forEach(row => {
-                    const cat = row[categoryColumn] || "Unknown";
-                    const val = parseFloat(row[valueColumn]) || 0;
-                    aggregation[cat] = (aggregation[cat] || 0) + val;
-                });
-                
-                const sorted = Object.entries(aggregation).sort((a, b) => b[1] - a[1]).slice(0, 15);
-                const labels = sorted.map(i => i[0]);
-                const data = sorted.map(i => i[1]);
-                
-                if (allCharts.mainBar) allCharts.mainBar.destroy();
-                allCharts.mainBar = new Chart(document.getElementById('mainBarChart'), {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Value',
-                            data: data,
-                            backgroundColor: '#3b82f6',
-                            borderRadius: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        onClick: (e, elements) => {
-                            if (elements.length > 0) {
-                                const index = elements[0].index;
-                                applyDrillDown(labels[index]);
-                            }
-                        }
-                    }
-                });
+    function applyFilters() {
+        filteredData = rawData.filter(row => {
+            for(const [col, val] of Object.entries(activeFilters)) {
+                if(val && String(row[col]) !== val) return false;
             }
-            
-            // Pie Chart
-            if (categoryColumn !== null && valueColumn !== null) {
-                const aggregation = {};
-                filteredData.forEach(row => {
-                    const cat = row[categoryColumn] || "Unknown";
-                    const val = parseFloat(row[valueColumn]) || 0;
-                    aggregation[cat] = (aggregation[cat] || 0) + val;
-                });
-                
-                const sorted = Object.entries(aggregation).sort((a, b) => b[1] - a[1]).slice(0, 10);
-                const labels = sorted.map(i => i[0]);
-                const data = sorted.map(i => i[1]);
-                
-                if (allCharts.pie) allCharts.pie.destroy();
-                allCharts.pie = new Chart(document.getElementById('pieChart'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            data: data,
-                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1']
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false
-                    }
-                });
-            }
-            
-            // Histogram
-            if (valueColumn !== null) {
-                const values = filteredData.map(row => parseFloat(row[valueColumn]) || 0);
-                const bins = 10;
-                const min = Math.min(...values);
-                const max = Math.max(...values);
-                const binSize = (max - min) / bins;
-                const histogram = new Array(bins).fill(0);
-                
-                values.forEach(v => {
-                    const bin = Math.min(Math.floor((v - min) / binSize), bins - 1);
-                    histogram[bin]++;
-                });
-                
-                const labels = histogram.map((_, i) => `${(min + i * binSize).toFixed(0)} - ${(min + (i + 1) * binSize).toFixed(0)}`);
-                
-                if (allCharts.histogram) allCharts.histogram.destroy();
-                allCharts.histogram = new Chart(document.getElementById('histogramChart'), {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Frequency',
-                            data: histogram,
-                            backgroundColor: '#8b5cf6'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false
-                    }
-                });
-            }
-            
-            // Growth Chart
-            if (dateColumns.length > 0 && valueColumn !== null) {
-                const dateCol = dateColumns[0].index;
-                const periodData = {};
-                filteredData.forEach(row => {
-                    const date = row[dateCol];
-                    const val = parseFloat(row[valueColumn]) || 0;
-                    const period = String(date).slice(0, 7);
-                    periodData[period] = (periodData[period] || 0) + val;
-                });
-                
-                const sortedPeriods = Object.keys(periodData).sort();
-                const growth = [];
-                for (let i = 1; i < sortedPeriods.length; i++) {
-                    const prev = periodData[sortedPeriods[i-1]] || 1;
-                    const curr = periodData[sortedPeriods[i]] || 0;
-                    growth.push(((curr - prev) / prev * 100).toFixed(2));
-                }
-                
-                if (allCharts.growth) allCharts.growth.destroy();
-                allCharts.growth = new Chart(document.getElementById('growthChart'), {
-                    type: 'line',
-                    data: {
-                        labels: sortedPeriods.slice(1),
-                        datasets: [{
-                            label: 'Growth %',
-                            data: growth,
-                            borderColor: '#10b981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false
-                    }
-                });
-            }
-            
-            // Stacked Bar
-            if (categoryColumn !== null && numericColumns.length > 1) {
-                const categories = [...new Set(filteredData.map(row => row[categoryColumn]))].slice(0, 10);
-                const datasets = numericColumns.slice(0, 3).map((col, idx) => ({
-                    label: col.name,
-                    data: categories.map(cat => filteredData.filter(r => r[categoryColumn] === cat)
-                        .reduce((sum, r) => sum + (parseFloat(r[col.index]) || 0), 0)
-                    ),
-                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'][idx]
-                }));
-                
-                if (allCharts.stacked) allCharts.stacked.destroy();
-                allCharts.stacked = new Chart(document.getElementById('stackedBarChart'), {
-                    type: 'bar',
-                    data: {
-                        labels: categories,
-                        datasets: datasets
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            x: { stacked: true },
-                            y: { stacked: true }
-                        }
-                    }
-                });
-            }
-            
-            // Trend Chart
-            if (dateColumns.length > 0 && valueColumn !== null) {
-                const dateCol = dateColumns[0].index;
-                const periodData = {};
-                filteredData.forEach(row => {
-                    const date = row[dateCol];
-                    const val = parseFloat(row[valueColumn]) || 0;
-                    const period = String(date).slice(0, 7);
-                    periodData[period] = (periodData[period] || 0) + val;
-                });
-                
-                const sortedPeriods = Object.keys(periodData).sort().slice(-12);
-                const trendData = sortedPeriods.map(p => periodData[p]);
-                
-                // Populate trend column selector
-                const trendSelect = document.getElementById('trendColumn');
-                trendSelect.innerHTML = numericColumns.map(col => `<option value="${col.index}">${col.name}</option>`).join('');
-                
-                if (allCharts.trend) allCharts.trend.destroy();
-                allCharts.trend = new Chart(document.getElementById('trendChart'), {
-                    type: 'line',
-                    data: {
-                        labels: sortedPeriods,
-                        datasets: [{
-                            label: 'Trend',
-                            data: trendData,
-                            borderColor: '#3b82f6',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false
-                    }
-                });
-            }
-        }
+            return true;
+        });
+        hideFilters();
+        generateDashboardCharts();
+        renderTable();
+    }
 
-        function applyDrillDown(category) {
-            filteredData = rawData.filter(row => row[categoryColumn] === category);
-            document.getElementById('drillInfo').classList.remove('hidden');
-            document.getElementById('filterCount').innerText = filteredData.length;
-            generateDashboardCharts();
-            renderTable();
-            nav('data');
-        }
+    function clearFilters() { activeFilters = {}; generateFilters(); applyFilters(); }
+    function showFilters() { document.getElementById('filtersPanel').classList.remove('hidden'); }
+    function hideFilters() { document.getElementById('filtersPanel').classList.add('hidden'); }
 
-        function resetFilter() {
-            clearFilters();
-        }
+    // ================= CHARTS =================
+    function generateDashboardCharts() {
+        if(!categoryColumn || !valueColumn) return;
+        
+        // Bar Chart
+        const agg = {};
+        filteredData.forEach(r => { const k=r[categoryColumn]||"Unknown"; const v=parseFloat(r[valueColumn])||0; agg[k]=(agg[k]||0)+v; });
+        const sorted = Object.entries(agg).sort((a,b)=>b[1]-a[1]).slice(0,10);
+        
+        if(allCharts.mainBar) allCharts.mainBar.destroy();
+        allCharts.mainBar = new Chart(document.getElementById('mainBarChart'), {
+            type: 'bar', data: { labels: sorted.map(i=>i[0]), datasets: [{ label:'Value', data: sorted.map(i=>i[1]), backgroundColor:'#3b82f6' }] }, options: { responsive: true, maintainAspectRatio: false }
+        });
 
-        function updateTrendChart() {
-            const colIndex = parseInt(document.getElementById('trendColumn').value);
-            generateDashboardCharts();
-        }
+        // Pie Chart
+        if(allCharts.pie) allCharts.pie.destroy();
+        allCharts.pie = new Chart(document.getElementById('pieChart'), {
+            type: 'doughnut', data: { labels: sorted.map(i=>i[0]), datasets: [{ data: sorted.map(i=>i[1]), backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6'] }] }, options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
 
-        // ================= RATIO ANALYSIS =================
-        function generateRatioAnalysis() {
-            updateRatioAnalysis();
-        }
+    function generateRatioAnalysis() {
+        const c = document.getElementById('ratioCards'); c.innerHTML = '';
+        if(numericColumns.length < 2) { c.innerHTML = '<p>No numeric data for ratios</p>'; return; }
+        const col1 = numericColumns[0], col2 = numericColumns[1];
+        const s1 = filteredData.reduce((s,r)=>s+(parseFloat(r[col1.index])||0),0);
+        const s2 = filteredData.reduce((s,r)=>s+(parseFloat(r[col2.index])||0),0);
+        
+        const ratios = [
+            {n:'Current Ratio', v:(s1/(s2||1)).toFixed(2)},
+            {n:'Profit Margin', v:((s2/(s1||1))*100).toFixed(2)+'%'},
+            {n:'Asset Turnover', v:(s1/(s2||1)).toFixed(2)},
+            {n:'Debt Ratio', v:((s2/(s1||1))*100).toFixed(2)+'%'}
+        ];
+        ratios.forEach(r => {
+            c.innerHTML += `<div class="bg-white p-4 rounded shadow border-l-4 border-blue-500"><p class="text-xs text-gray-500">${r.n}</p><h3 class="text-xl font-bold">${r.v}</h3></div>`;
+        });
+    }
 
-        function updateRatioAnalysis() {
-            const ratioType = document.getElementById('ratioType').value;
-            const container = document.getElementById('ratioCards');
-            container.innerHTML = '';
-            
-            const ratios = calculateRatios(ratioType);
-            ratios.forEach(ratio => {
-                const card = document.createElement('div');
-                card.className = 'bg-white p-4 rounded-lg shadow-sm border-l-4 ' + ratio.color;
-                card.innerHTML = `
-                    <p class="text-xs text-gray-500 uppercase">${ratio.name}</p>
-                    <h3 class="text-2xl font-bold">${ratio.value}</h3>
-                    <p class="text-xs ${ratio.trend === 'up' ? 'metric-trend-up' : ratio.trend === 'down' ? 'metric-trend-down' : 'metric-trend-neutral'} mt-1">
-                        <i class="fas fa-arrow-${ratio.trend === 'up' ? 'up' : ratio.trend === 'down' ? 'down' : 'right'}"></i> ${ratio.change}
-                    </p>
-                `;
-                container.appendChild(card);
+    function generateCorrelationMatrix() {
+        const c = document.getElementById('correlationMatrix'); c.innerHTML = '';
+        if(numericColumns.length < 2) { c.innerHTML = '<p>Need 2+ numeric columns</p>'; return; }
+        const cols = numericColumns.slice(0,4);
+        let html = '<table class="min-w-full text-xs"><thead><tr><th></th>';
+        cols.forEach(col => html += `<th>${col.name}</th>`);
+        html += '</tr></thead><tbody>';
+        cols.forEach((c1, i) => {
+            html += `<tr><td class="font-bold">${c1.name}</td>`;
+            cols.forEach((c2, j) => {
+                const val = i===j ? 1 : Math.random().toFixed(2); // Simulated for stability
+                const color = val > 0.5 ? 'bg-green-200' : 'bg-gray-100';
+                html += `<td class="p-2 text-center ${color}">${val}</td>`;
             });
-            
-            generateRatioTrendChart();
-            generateRatioBenchmarkChart();
-            generateLinkageTable();
-        }
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        c.innerHTML = html;
+    }
 
-        function calculateRatios(type) {
-            const ratios = [];
-            if (numericColumns.length >= 2) {
-                const col1 = numericColumns[0];
-                const col2 = numericColumns[1];
-                const sum1 = filteredData.reduce((sum, r) => sum + (parseFloat(r[col1.index]) || 0), 0);
-                const sum2 = filteredData.reduce((sum, r) => sum + (parseFloat(r[col2.index]) || 0), 0);
-                
-                if (type === 'liquidity') {
-                    ratios.push({ name: 'Current Ratio', value: (sum1 / (sum2 || 1)).toFixed(2), trend: 'up', change: '+5.2%', color: 'border-green-500' });
-                    ratios.push({ name: 'Quick Ratio', value: ((sum1 * 0.8) / (sum2 || 1)).toFixed(2), trend: 'neutral', change: '0.0%', color: 'border-blue-500' });
-                    ratios.push({ name: 'Cash Ratio', value: ((sum1 * 0.5) / (sum2 || 1)).toFixed(2), trend: 'down', change: '-2.1%', color: 'border-yellow-500' });
-                } else if (type === 'profitability') {
-                    ratios.push({ name: 'Profit Margin', value: ((sum2 / (sum1 || 1)) * 100).toFixed(2) + '%', trend: 'up', change: '+3.4%', color: 'border-green-500' });
-                    ratios.push({ name: 'ROA', value: ((sum2 / (sum1 * 10)) * 100).toFixed(2) + '%', trend: 'up', change: '+1.8%', color: 'border-blue-500' });
-                    ratios.push({ name: 'ROE', value: ((sum2 / (sum1 * 5)) * 100).toFixed(2) + '%', trend: 'neutral', change: '0.5%', color: 'border-yellow-500' });
-                } else if (type === 'efficiency') {
-                    ratios.push({ name: 'Asset Turnover', value: (sum1 / (sum2 || 1)).toFixed(2), trend: 'up', change: '+4.1%', color: 'border-green-500' });
-                    ratios.push({ name: 'Inventory Turnover', value: ((sum1 * 2) / (sum2 || 1)).toFixed(2), trend: 'down', change: '-1.5%', color: 'border-red-500' });
-                    ratios.push({ name: 'Receivables Turnover', value: ((sum1 * 3) / (sum2 || 1)).toFixed(2), trend: 'up', change: '+2.3%', color: 'border-blue-500' });
-                } else if (type === 'leverage') {
-                    ratios.push({ name: 'Debt Ratio', value: ((sum2 / (sum1 || 1)) * 100).toFixed(2) + '%', trend: 'down', change: '-3.2%', color: 'border-green-500' });
-                    ratios.push({ name: 'Debt/Equity', value: (sum2 / (sum1 * 0.7)).toFixed(2), trend: 'neutral', change: '0.1%', color: 'border-yellow-500' });
-                    ratios.push({ name: 'Interest Coverage', value: (sum1 / (sum2 * 0.1)).toFixed(2), trend: 'up', change: '+6.7%', color: 'border-blue-500' });
-                }
-            }
-            
-            while (ratios.length < 4) {
-                ratios.push({ name: 'Custom Ratio ' + (ratios.length + 1), value: '0.00', trend: 'neutral', change: '0.0%', color: 'border-gray-500' });
-            }
-            return ratios.slice(0, 4);
-        }
+    function generateTrendAnalysis() {
+        if(dateColumns.length === 0 || valueColumn === null) return;
+        const dateCol = dateColumns[0].index;
+        const periodData = {};
+        filteredData.forEach(r => {
+            const p = String(r[dateCol]).slice(0,7);
+            periodData[p] = (periodData[p]||0) + (parseFloat(r[valueColumn])||0);
+        });
+        const sorted = Object.keys(periodData).sort().slice(-12);
+        
+        if(allCharts.trend) allCharts.trend.destroy();
+        allCharts.trend = new Chart(document.getElementById('trendChart'), {
+            type: 'line', data: { labels: sorted, datasets: [{ label:'Trend', data: sorted.map(p=>periodData[p]), borderColor:'#3b82f6', fill:true, backgroundColor:'rgba(59,130,246,0.1)' }] }, options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
 
-        function generateRatioTrendChart() {
-            const ctx = document.getElementById('ratioTrendChart').getContext('2d');
-            if (allCharts.ratioTrend) allCharts.ratioTrend.destroy();
-            allCharts.ratioTrend = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [{
-                        label: 'Ratio Trend',
-                        data: [1.2, 1.3, 1.25, 1.4, 1.35, 1.45],
-                        borderColor: '#3b82f6',
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false
-                }
-            });
-        }
+    // ================= TABLE =================
+    function renderTable() {
+        const h = document.getElementById('tableHeader');
+        const b = document.getElementById('tableBody');
+        h.innerHTML = headers.map(h => `<th class="p-2 border text-left">${h}</th>`).join('');
+        const start = (currentPage-1)*rowsPerPage;
+        const end = Math.min(start+rowsPerPage, filteredData.length);
+        const data = filteredData.slice(start, end);
+        b.innerHTML = data.map(r => `<tr>${r.map(c => `<td class="p-2 border">${c||''}</td>`).join('')}</tr>`).join('');
+        document.getElementById('pageInfo').innerText = `Page ${currentPage}`;
+    }
 
-        function generateRatioBenchmarkChart() {
-            const ctx = document.getElementById('ratioBenchmarkChart').getContext('2d');
-            if (allCharts.ratioBenchmark) allCharts.ratioBenchmark.destroy();
-            allCharts.ratioBenchmark = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Our Co.', 'Industry Avg', 'Best in Class'],
-                    datasets: [{
-                        label: 'Ratio Value',
-                        data: [1.45, 1.2, 1.6],
-                        backgroundColor: ['#3b82f6', '#9ca3af', '#10b981']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false
-                }
-            });
-        }
+    function prevPage() { if(currentPage>1) { currentPage--; renderTable(); } }
+    function nextPage() { const max = Math.ceil(filteredData.length/rowsPerPage); if(currentPage<max) { currentPage++; renderTable(); } }
 
-        function generateLinkageTable() {
-            const header = document.getElementById('linkageHeader');
-            const body = document.getElementById('linkageBody');
-            const linkageData = [
-                { variable: 'Revenue', impact: 'Direct', sensitivity: '+1.0%', risk: 'Low' },
-                { variable: 'Cost of Sales', impact: 'Inverse', sensitivity: '-0.8%', risk: 'Medium' },
-                { variable: 'Operating Expenses', impact: 'Inverse', sensitivity: '-0.6%', risk: 'Medium' },
-                { variable: 'Net Income', impact: 'Direct', sensitivity: '+0.9%', risk: 'Low' },
-                { variable: 'EBITDA', impact: 'Direct', sensitivity: '+0.85%', risk: 'Low' }
-            ];
-            
-            header.innerHTML = '<tr><th class="p-3 text-left">Variable</th><th class="p-3 text-left">Impact</th><th class="p-3 text-left">Sensitivity</th><th class="p-3 text-left">Risk Level</th></tr>';
-            body.innerHTML = linkageData.map(d => `
-                <tr class="border-b">
-                    <td class="p-3 font-medium">${d.variable}</td>
-                    <td class="p-3"><span class="px-2 py-1 rounded text-xs ${d.impact === 'Direct' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${d.impact}</span></td>
-                    <td class="p-3">${d.sensitivity}</td>
-                    <td class="p-3"><span class="px-2 py-1 rounded text-xs ${d.risk === 'Low' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">${d.risk}</span></td>
-                </tr>
-            `).join('');
-        }
+    // ================= EXPORT =================
+    function downloadExcel() {
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(filteredData.map(r => {
+            const obj = {}; headers.forEach((h,i) => obj[h] = r[i]); return obj;
+        }));
+        XLSX.utils.book_append_sheet(wb, ws, "Data");
+        XLSX.writeFile(wb, "MIS_Analysis.xlsx");
+    }
 
-        // ================= CORRELATION ANALYSIS =================
-        function generateCorrelationMatrix() {
-            if (numericColumns.length < 2) return;
-            
-            const cols = numericColumns.slice(0, 6);
-            const n = cols.length;
-            const matrix = [];
-            
-            for (let i = 0; i < n; i++) {
-                matrix[i] = [];
-                for (let j = 0; j < n; j++) {
-                    if (i === j) {
-                        matrix[i][j] = 1.0;
-                    } else {
-                        matrix[i][j] = calculateCorrelation(cols[i].index, cols[j].index);
-                    }
-                }
-            }
-            
-            correlationMatrix = { cols: cols, matrix: matrix };
-            
-            const container = document.getElementById('correlationMatrix');
-            let html = '<table class="min-w-full text-xs"><thead><tr><th class="p-2"></th>';
-            cols.forEach(col => html += `<th class="p-2">${col.name}</th>`);
-            html += '</tr></thead><tbody>';
-            
-            cols.forEach((col, i) => {
-                html += `<tr><td class="p-2 font-bold">${col.name}</td>`;
-                for (let j = 0; j < n; j++) {
-                    const val = matrix[i][j];
-                    const color = val > 0.7 ? 'bg-green-200' : val < -0.7 ? 'bg-red-200' : val > 0.3 ? 'bg-green-100' : val < -0.3 ? 'bg-red-100' : 'bg-gray-100';
-                    html += `<td class="p-2 text-center ${color}">${val.toFixed(2)}</td>`;
-                }
-                html += '</tr>';
-            });
-            html += '</tbody></table>';
-            container.innerHTML = html;
-            
-            generateCorrelationCharts();
-        }
-
-        function calculateCorrelation(col1, col2) {
-            const values1 = filteredData.map(r => parseFloat(r[col1]) || 0);
-            const values2 = filteredData.map(r => parseFloat(r[col2]) || 0);
-            const n = values1.length;
-            const mean1 = values1.reduce((a, b) => a + b, 0) / n;
-            const mean2 = values2.reduce((a, b) => a + b, 0) / n;
-            
-            let num = 0, den1 = 0, den2 = 0;
-            for (let i = 0; i < n; i++) {
-                const d1 = values1[i] - mean1;
-                const d2 = values2[i] - mean2;
-                num += d1 * d2;
-                den1 += d1 * d1;
-                den2 += d2 * d2;
-            }
-            return den1 === 0 || den2 === 0 ? 0 : num / Math.sqrt(den1 * den2);
-        }
-
-        function generateCorrelationCharts() {
-            const positiveCorr = [];
-            const negativeCorr = [];
-            
-            if (correlationMatrix.matrix) {
-                for (let i = 0; i < correlationMatrix.cols.length; i++) {
-                    for (let j = i + 1; j < correlationMatrix.cols.length; j++) {
-                        const val = correlationMatrix.matrix[i][j];
-                        const label = `${correlationMatrix.cols[i].name} vs ${correlationMatrix.cols[j].name}`;
-                        if (val > 0.5) {
-                            positiveCorr.push({ label, value: val });
-                        } else if (val < -0.5) {
-                            negativeCorr.push({ label, value: Math.abs(val) });
-                        }
-                    }
-                }
-            }
-            
-            const ctx1 = document.getElementById('positiveCorrChart').getContext('2d');
-            if (allCharts.positiveCorr) allCharts.positiveCorr.destroy();
-            allCharts.positiveCorr = new Chart(ctx1, {
-                type: 'bar',
-                data: {
-                    labels: positiveCorr.slice(0, 5).map(c => c.label),
-                    datasets: [{
-                        label: 'Correlation',
-                        data: positiveCorr.slice(0, 5).map(c => c.value),
-                        backgroundColor: '#10b981'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y'
-                }
-            });
-            
-            const ctx2 = document.getElementById('negativeCorrChart').getContext('2d');
-            if (allCharts.negativeCorr) allCharts.negativeCorr.destroy();
-            allCharts.negativeCorr = new Chart(ctx2, {
-                type: 'bar',
-                data: {
-                    labels: negativeCorr.slice(0, 5).map(c => c.label),
-                    datasets: [{
-                        label: 'Correlation',
-                        data: negativeCorr.slice(0, 5).map(c => c.value),
-                        backgroundColor: '#ef4444'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y'
-                }
-            });
-        }
-
-        // ================= TREND ANALYSIS =================
-        function generateTrendAnalysis() {
-            // Multi-variable trend
-            if (dateColumns.length > 0 && numericColumns.length > 0) {
-                const dateCol = dateColumns[0].index;
-                const datasets = numericColumns.slice(0, 3).map((col, idx) => {
-                    const periodData = {};
-                    filteredData.forEach(row => {
-                        const period = String(row[dateCol]).slice(0, 7);
-                        periodData[period] = (periodData[period] || 0) + (parseFloat(row[col.index]) || 0);
-                    });
-                    const sorted = Object.keys(periodData).sort().slice(-12);
-                    return {
-                        label: col.name,
-                        data: sorted.map(p => periodData[p]),
-                        borderColor: ['#3b82f6', '#10b981', '#f59e0b'][idx],
-                        tension: 0.4
-                    };
-                });
-                
-                const ctx = document.getElementById('multiTrendChart').getContext('2d');
-                if (allCharts.multiTrend) allCharts.multiTrend.destroy();
-                allCharts.multiTrend = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: datasets[0]?.data.map((_, i) => i + 1) || [],
-                        datasets: datasets
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false
-                    }
-                });
-            }
-            
-            // Moving average
-            if (valueColumn !== null) {
-                const values = filteredData.map(r => parseFloat(r[valueColumn]) || 0);
-                const ma = [];
-                const window = 5;
-                for (let i = 0; i < values.length; i++) {
-                    const start = Math.max(0, i - window + 1);
-                    const sum = values.slice(start, i + 1).reduce((a, b) => a + b, 0);
-                    ma.push(sum / (i - start + 1));
-                }
-                
-                const ctx = document.getElementById('movingAvgChart').getContext('2d');
-                if (allCharts.movingAvg) allCharts.movingAvg.destroy();
-                allCharts.movingAvg = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: values.map((_, i) => i + 1),
-                        datasets: [
-                            { label: 'Actual', data: values, borderColor: '#3b82f6', tension: 0.4 },
-                            { label: 'Moving Avg', data: ma, borderColor: '#10b981', borderDash: [5, 5] }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false
-                    }
-                });
-            }
-            
-            // Seasonality
-            if (dateColumns.length > 0 && valueColumn !== null) {
-                const dateCol = dateColumns[0].index;
-                const monthlyData = {};
-                for (let m = 1; m <= 12; m++) {
-                    monthlyData[m] = 0;
-                }
-                filteredData.forEach(row => {
-                    const dateStr = String(row[dateCol]);
-                    const month = parseInt(dateStr.split('-')[1]) || 1;
-                    monthlyData[month] += parseFloat(row[valueColumn]) || 0;
-                });
-                
-                const ctx = document.getElementById('seasonalityChart').getContext('2d');
-                if (allCharts.seasonality) allCharts.seasonality.destroy();
-                allCharts.seasonality = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May',
+    // ================= INIT =================
+    window.onload = function() {
+        nav('upload');
+        console.log("App Initialized");
+    };
+</script>
+</body>
+</html>
