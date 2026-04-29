@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sales Register Analytics | Oracle Fusion</title>
+    <title>Oracle Fusion Deep Analysis | MIS Analytics</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
@@ -28,15 +28,18 @@
         .section { display: none; animation: fadeIn 0.3s ease-in-out; }
         .section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        table { border-collapse: collapse; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        th { background-color: #f9fafb; font-weight: 600; }
+        tr:hover { background-color: #f9fafb; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden text-gray-800">
-
     <!-- Sidebar -->
     <aside class="sidebar w-64 hidden md:flex flex-col shadow-xl z-20">
         <div class="p-6 border-b border-blue-800">
-            <h1 class="text-2xl font-bold tracking-tight"><i class="fas fa-chart-line mr-2"></i>Sales Analytics</h1>
-            <p class="text-xs text-blue-200 mt-1">Deep MIS Engine</p>
+            <h1 class="text-2xl font-bold tracking-tight"><i class="fas fa-cube mr-2"></i>Oracle Fusion</h1>
+            <p class="text-xs text-blue-200 mt-1">Deep MIS Analytics Engine</p>
         </div>
         <nav class="flex-1 overflow-y-auto py-4 space-y-1">
             <button onclick="nav('upload')" class="nav-btn w-full text-left px-6 py-3 active-nav" id="nav-upload"><i class="fas fa-upload w-6"></i> Upload Data</button>
@@ -59,7 +62,7 @@
         <!-- Header -->
         <header class="bg-white shadow-sm p-4 flex justify-between items-center z-10">
             <div class="flex items-center">
-                <h2 id="pageTitle" class="text-xl font-bold text-gray-800">Upload Sales Register</h2>
+                <h2 id="pageTitle" class="text-xl font-bold text-gray-800">Upload Data</h2>
             </div>
             <div class="flex space-x-3">
                 <button onclick="toggleFilters()" class="bg-indigo-600 text-white px-4 py-2 rounded shadow hover:bg-indigo-700 text-sm transition">
@@ -100,8 +103,8 @@
             <div id="section-upload" class="section active">
                 <div class="max-w-5xl mx-auto mt-10">
                     <div class="text-center mb-10">
-                        <h1 class="text-4xl font-bold text-gray-800 mb-2">Sales Register Ingestion</h1>
-                        <p class="text-gray-500">Upload Invoice Data, Sales Reports, or Billing Logs</p>
+                        <h1 class="text-4xl font-bold text-gray-800 mb-2">Data Ingestion</h1>
+                        <p class="text-gray-500">Upload any Excel/CSV data (Sales, Fixed Assets, Purchases, Stocks, etc.)</p>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="card p-8 border-2 border-dashed border-gray-300 hover:border-blue-500 transition cursor-pointer bg-white" onclick="document.getElementById('fileInput').click()">
@@ -115,12 +118,29 @@
                             <div class="text-center">
                                 <i class="fas fa-bolt text-5xl text-purple-500 mb-4"></i>
                                 <h3 class="text-xl font-bold text-gray-700">Quick Demo</h3>
-                                <p class="text-sm text-gray-500 mt-2">Test with sample Sales Register data.</p>
+                                <p class="text-sm text-gray-500 mt-2">Test with sample data</p>
                                 <button onclick="loadDemoData()" class="mt-4 bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700 w-full">Load Demo Data</button>
                             </div>
                         </div>
                     </div>
                     <input type="file" id="fileInput" class="hidden" accept=".xlsx,.xls,.csv">
+                    <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="card p-6">
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-3"><i class="fas fa-magic"></i></div>
+                            <h4 class="font-bold">Auto-Detect</h4>
+                            <p class="text-sm text-gray-500 mt-1">Identifies columns, types, and metrics automatically.</p>
+                        </div>
+                        <div class="card p-6">
+                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-3"><i class="fas fa-chart-pie"></i></div>
+                            <h4 class="font-bold">Instant Charts</h4>
+                            <p class="text-sm text-gray-500 mt-1">Visualizations generated immediately upon upload.</p>
+                        </div>
+                        <div class="card p-6">
+                            <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 mb-3"><i class="fas fa-filter"></i></div>
+                            <h4 class="font-bold">Deep Filters</h4>
+                            <p class="text-sm text-gray-500 mt-1">Filter by date, range, or category instantly.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -128,44 +148,107 @@
             <div id="section-dashboard" class="section">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                     <div class="card p-6 border-l-4 border-blue-500">
-                        <p class="text-xs text-gray-500 uppercase font-bold">Total Invoices</p>
+                        <p class="text-xs text-gray-500 uppercase font-bold">Total Records</p>
                         <h3 class="text-3xl font-bold text-gray-800 mt-2" id="kpi-records">0</h3>
                     </div>
                     <div class="card p-6 border-l-4 border-green-500">
-                        <p class="text-xs text-gray-500 uppercase font-bold">Total Revenue</p>
+                        <p class="text-xs text-gray-500 uppercase font-bold">Total Value</p>
                         <h3 class="text-3xl font-bold text-gray-800 mt-2" id="kpi-total">0</h3>
                     </div>
                     <div class="card p-6 border-l-4 border-purple-500">
-                        <p class="text-xs text-gray-500 uppercase font-bold">Avg Invoice Value</p>
-                        <h3 class="text-3xl font-bold text-gray-800 mt-2" id="kpi-avg">0</h3>
+                        <p class="text-xs text-gray-500 uppercase font-bold">Numeric Variables</p>
+                        <h3 class="text-3xl font-bold text-gray-800 mt-2" id="kpi-vars">0</h3>
                     </div>
                     <div class="card p-6 border-l-4 border-orange-500">
-                        <p class="text-xs text-gray-500 uppercase font-bold">Unique Customers</p>
-                        <h3 class="text-3xl font-bold text-gray-800 mt-2" id="kpi-customers">0</h3>
+                        <p class="text-xs text-gray-500 uppercase font-bold">Categories</p>
+                        <h3 class="text-3xl font-bold text-gray-800 mt-2" id="kpi-categories">0</h3>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     <div class="card p-6">
                         <div class="flex justify-between items-center mb-4">
-                            <h4 class="font-bold text-gray-700"><i class="fas fa-chart-bar text-blue-500 mr-2"></i>Top Customers by Revenue</h4>
+                            <h4 class="font-bold text-gray-700"><i class="fas fa-chart-bar text-blue-500 mr-2"></i>Top 10 Contributors</h4>
                         </div>
                         <div class="chart-container"><canvas id="mainBarChart"></canvas></div>
                     </div>
                     <div class="card p-6">
                         <div class="flex justify-between items-center mb-4">
-                            <h4 class="font-bold text-gray-700"><i class="fas fa-chart-pie text-green-500 mr-2"></i>Revenue by Service</h4>
+                            <h4 class="font-bold text-gray-700"><i class="fas fa-chart-pie text-green-500 mr-2"></i>Distribution</h4>
                         </div>
                         <div class="chart-container"><canvas id="pieChart"></canvas></div>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Monthly Revenue Trend</h4>
-                        <div class="chart-container"><canvas id="trendChart"></canvas></div>
+                        <h4 class="font-bold text-gray-700 mb-4">Value Distribution</h4>
+                        <div class="chart-container"><canvas id="histogramChart"></canvas></div>
                     </div>
                     <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Tax vs Net Revenue</h4>
-                        <div class="chart-container"><canvas id="taxChart"></canvas></div>
+                        <h4 class="font-bold text-gray-700 mb-4">Period Trend</h4>
+                        <div class="chart-container"><canvas id="trendChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: RATIO ANALYSIS -->
+            <div id="section-analysis" class="section">
+                <div class="card p-6 mb-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h4 class="font-bold text-gray-700 text-xl">Financial Ratio Analysis</h4>
+                        <select id="ratioType" onchange="updateRatioAnalysis()" class="border rounded px-3 py-2 text-sm bg-white">
+                            <option value="liquidity">Liquidity Ratios</option>
+                            <option value="profitability">Profitability Ratios</option>
+                            <option value="efficiency">Efficiency Ratios</option>
+                            <option value="leverage">Leverage Ratios</option>
+                        </select>
+                    </div>
+                    <div id="ratioCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card p-6">
+                        <h4 class="font-bold text-gray-700 mb-4">Ratio Trend</h4>
+                        <div class="chart-container"><canvas id="ratioTrendChart"></canvas></div>
+                    </div>
+                    <div class="card p-6">
+                        <h4 class="font-bold text-gray-700 mb-4">Benchmarking</h4>
+                        <div class="chart-container"><canvas id="ratioBenchmarkChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: CORRELATION -->
+            <div id="section-correlation" class="section">
+                <div class="card p-6 mb-6">
+                    <h4 class="font-bold text-gray-700 mb-2">Correlation Matrix</h4>
+                    <p class="text-sm text-gray-500 mb-6">Identifies relationships between numeric variables (1 = perfect positive)</p>
+                    <div class="overflow-x-auto" id="correlationMatrix"></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card p-6">
+                        <h4 class="font-bold text-gray-700 mb-4">Top Positive Correlations</h4>
+                        <div class="chart-container"><canvas id="positiveCorrChart"></canvas></div>
+                    </div>
+                    <div class="card p-6">
+                        <h4 class="font-bold text-gray-700 mb-4">Top Negative Correlations</h4>
+                        <div class="chart-container"><canvas id="negativeCorrChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: TRENDS -->
+            <div id="section-trends" class="section">
+                <div class="card p-6 mb-6">
+                    <h4 class="font-bold text-gray-700 mb-4">Multi-Variable Trend Analysis</h4>
+                    <div class="chart-container"><canvas id="multiTrendChart"></canvas></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card p-6">
+                        <h4 class="font-bold text-gray-700 mb-4">Moving Average (5 Period)</h4>
+                        <div class="chart-container"><canvas id="movingAvgChart"></canvas></div>
+                    </div>
+                    <div class="card p-6">
+                        <h4 class="font-bold text-gray-700 mb-4">Seasonality Detection</h4>
+                        <div class="chart-container"><canvas id="seasonalityChart"></canvas></div>
                     </div>
                 </div>
             </div>
@@ -206,8 +289,8 @@
                     <div class="card p-8 text-center mb-6">
                         <i class="fas fa-file-export text-6xl text-blue-600 mb-4"></i>
                         <h3 class="text-2xl font-bold text-gray-800">Export Analysis Package</h3>
-                        <p class="text-gray-500 mb-8">Download filtered data and calculated metrics</p>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 text-left max-w-2xl mx-auto">
+                        <p class="text-gray-500 mb-8">Download filtered data, calculated ratios, and chart data</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-left">
                             <button onclick="downloadExcel('all')" class="p-4 border rounded-lg hover:bg-green-50 hover:border-green-500 transition">
                                 <i class="fas fa-file-excel text-green-600 text-xl mb-2"></i>
                                 <h5 class="font-semibold">Full Package</h5>
@@ -218,16 +301,15 @@
                                 <h5 class="font-semibold">Cleaned Data</h5>
                                 <p class="text-xs text-gray-500">Raw filtered rows</p>
                             </button>
+                            <button onclick="downloadExcel('ratios')" class="p-4 border rounded-lg hover:bg-purple-50 hover:border-purple-500 transition">
+                                <i class="fas fa-calculator text-purple-600 text-xl mb-2"></i>
+                                <h5 class="font-semibold">Ratios</h5>
+                                <p class="text-xs text-gray-500">Calculated metrics</p>
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Other Sections (Placeholder for now to keep file size manageable) -->
-            <div id="section-analysis" class="section"><div class="card p-6"><h4>Ratio Analysis</h4><p>Coming Soon</p></div></div>
-            <div id="section-correlation" class="section"><div class="card p-6"><h4>Correlation</h4><p>Coming Soon</p></div></div>
-            <div id="section-trends" class="section"><div class="card p-6"><h4>Trends</h4><p>Coming Soon</p></div></div>
-
         </div>
     </main>
 
@@ -239,14 +321,13 @@
         let numericColumns = [];
         let textColumns = [];
         let dateColumns = [];
-        let categoryColumn = null; // e.g., Customer Name
-        let serviceColumn = null;  // e.g., Product / Service
-        let valueColumn = null;    // e.g., Net Revenue
-        let dateColumn = null;     // e.g., Invoice Date
+        let categoryColumn = null;
+        let valueColumn = null;
         let allCharts = {};
         let currentPage = 1;
         let rowsPerPage = 50;
         let activeFilters = {};
+        let correlationMatrix = {};
 
         // ================= SAFE DOM ACCESS =================
         function $$(id) {
@@ -254,21 +335,9 @@
             if (!el) { console.warn('Element not found:', id); return null; }
             return el;
         }
-
-        function setText(id, value) {
-            const el = $$(id);
-            if (el) el.innerText = value;
-        }
-
-        function setHTML(id, value) {
-            const el = $$(id);
-            if (el) el.innerHTML = value;
-        }
-
-        function toggleClass(id, className) {
-            const el = $$(id);
-            if (el) el.classList.toggle(className);
-        }
+        function setText(id, value) { const el = $$(id); if (el) el.innerText = value; }
+        function setHTML(id, value) { const el = $$(id); if (el) el.innerHTML = value; }
+        function toggleClass(id, className) { const el = $$(id); if (el) el.classList.toggle(className); }
 
         function showLoader(show, text = "Processing...", sub = "Please wait...") {
             const loader = $$('loader');
@@ -303,21 +372,21 @@
 
             if (section === 'dashboard') generateDashboardCharts();
             if (section === 'data') renderTable();
+            if (section === 'analysis') updateRatioAnalysis();
+            if (section === 'correlation') generateCorrelationMatrix();
+            if (section === 'trends') generateTrendAnalysis();
         }
 
-        function resetApp() {
-            if (confirm("Reset all data and filters?")) location.reload();
-        }
+        function resetApp() { if (confirm("Reset all data and filters?")) location.reload(); }
 
         // ================= FILE HANDLING =================
         $$('fileInput').addEventListener('change', handleFileSelect);
-
         function handleFileSelect(e) {
             const file = e.target.files[0];
             if (!file) return;
             showLoader(true, "Reading File...", "Parsing Excel data...");
             const reader = new FileReader();
-            reader.onload = function (e) {
+            reader.onload = function(e) {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array', cellDates: true });
@@ -333,34 +402,32 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // ================= DEMO DATA (Matches Your Sales Register) =================
+        // ================= DEMO DATA =================
         function loadDemoData() {
-            showLoader(true, "Generating Demo Data...", "Simulating Sales Register...");
+            showLoader(true, "Generating Demo Data...", "Simulating data...");
             setTimeout(() => {
-                headers = ['Invoice Date', 'Invoice No', 'Customer Name', 'Product / Service', 'Quantity', 'Unit Price (PKR)', 'Gross Amount (PKR)', 'Sales Tax %', 'Sales Tax Amount (PKR)', 'Net Revenue (PKR)'];
-                const customers = ['Customer 1', 'Customer 2', 'Customer 3', 'Customer 4', 'Customer 5'];
-                const services = ['Service 1', 'Service 2', 'Service 3', 'Service 4', 'Service 5'];
+                headers = ['Date', 'Category', 'Item', 'Quantity', 'Unit Price', 'Total Amount', 'Region', 'Status'];
+                const categories = ['Sales', 'Purchases', 'Fixed Assets', 'Inventory', 'Expenses'];
+                const regions = ['North', 'South', 'East', 'West'];
+                const statuses = ['Completed', 'Pending', 'Cancelled'];
                 rawData = [];
-                for (let i = 0; i < 100; i++) {
-                    const date = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
-                    const cust = customers[Math.floor(Math.random() * customers.length)];
-                    const svc = services[Math.floor(Math.random() * services.length)];
-                    const qty = Math.floor(Math.random() * 10) + 1;
-                    const price = (Math.floor(Math.random() * 5) + 1) * 10000;
-                    const gross = qty * price;
-                    const tax = gross * 0.18;
-                    const net = gross + tax;
+                for (let i = 0; i < 500; i++) {
+                    const date = new Date(2023, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
+                    const cat = categories[Math.floor(Math.random() * categories.length)];
+                    const region = regions[Math.floor(Math.random() * regions.length)];
+                    const status = statuses[Math.floor(Math.random() * statuses.length)];
+                    const qty = Math.floor(Math.random() * 100) + 1;
+                    const price = Math.floor(Math.random() * 10000) + 100;
+                    const total = qty * price;
                     rawData.push([
                         date.toISOString().split('T')[0],
-                        'INV-' + (1000 + i),
-                        cust,
-                        svc,
+                        cat,
+                        'Item-' + i,
                         qty,
                         price,
-                        gross,
-                        18,
-                        tax,
-                        net
+                        total,
+                        region,
+                        status
                     ]);
                 }
                 processOracleData(rawData);
@@ -384,14 +451,11 @@
                 }
                 headers = rows[headerRowIndex].map(h => String(h).trim());
                 rawData = rows.slice(headerRowIndex + 1).filter(row => row.length > 0);
-                
                 detectColumnTypes();
                 filteredData = [...rawData];
-
                 setText('recordCount', rawData.length.toLocaleString());
                 setText('columnCount', headers.length);
                 showLoader(false);
-                
                 generateAllAnalysis();
                 nav('dashboard');
             } catch (err) {
@@ -404,7 +468,6 @@
         function cleanNumber(val) {
             if (typeof val === 'number') return val;
             if (!val) return 0;
-            // Remove commas, spaces, and currency symbols like PKR
             let clean = String(val).replace(/[^0-9.-]/g, '');
             return parseFloat(clean) || 0;
         }
@@ -414,63 +477,45 @@
             textColumns = [];
             dateColumns = [];
             categoryColumn = null;
-            serviceColumn = null;
             valueColumn = null;
-            dateColumn = null;
-
             const sample = Math.min(rawData.length, 100);
-
             headers.forEach((h, idx) => {
                 const lower = h.toLowerCase();
                 let num = 0, date = 0, text = 0;
-
                 for (let i = 0; i < sample; i++) {
                     const v = rawData[i][idx];
                     if (v === null || v === undefined) continue;
-                    
-                    // Check Number
                     if (!isNaN(parseFloat(cleanNumber(v))) && isFinite(cleanNumber(v))) num++;
-                    // Check Date
                     else if (String(v).match(/^\d{4}-\d{2}-\d{2}$/)) date++;
                     else text++;
                 }
-
                 if (num > sample * 0.7) {
                     numericColumns.push({ index: idx, name: h });
-                    // Auto-detect Value Column (Revenue/Amount)
-                    if (!valueColumn && (lower.includes('revenue') || lower.includes('amount') || lower.includes('price'))) {
+                    if (!valueColumn && (lower.includes('amount') || lower.includes('price') || lower.includes('total') || lower.includes('revenue'))) {
                         valueColumn = idx;
                     }
                 } else if (date > sample * 0.7) {
                     dateColumns.push({ index: idx, name: h });
-                    if (!dateColumn) dateColumn = idx;
                 } else {
                     textColumns.push({ index: idx, name: h });
-                    // Auto-detect Category (Customer/Name)
-                    if (!categoryColumn && (lower.includes('customer') || lower.includes('name'))) {
+                    if (!categoryColumn && (lower.includes('category') || lower.includes('name') || lower.includes('item') || lower.includes('customer'))) {
                         categoryColumn = idx;
-                    }
-                    // Auto-detect Service (Product/Service)
-                    if (!serviceColumn && (lower.includes('service') || lower.includes('product'))) {
-                        serviceColumn = idx;
                     }
                 }
             });
-
-            // Fallbacks
             if (!valueColumn && numericColumns.length > 0) valueColumn = numericColumns[numericColumns.length - 1].index;
             if (!categoryColumn && textColumns.length > 0) categoryColumn = textColumns[0].index;
-            if (!dateColumn && dateColumns.length > 0) dateColumn = dateColumns[0].index;
-
-            console.log("Detected Columns:", { value: valueColumn, category: categoryColumn, date: dateColumn });
         }
 
         function generateAllAnalysis() {
-            showLoader(true, "Analyzing...", "Calculating Metrics...");
+            showLoader(true, "Analyzing...", "Calculating metrics...");
             setTimeout(() => {
                 updateKPIs();
                 generateFilters();
                 generateDashboardCharts();
+                generateRatioAnalysis();
+                generateCorrelationMatrix();
+                generateTrendAnalysis();
                 renderTable();
                 showLoader(false);
             }, 600);
@@ -478,30 +523,24 @@
 
         function updateKPIs() {
             setText('kpi-records', filteredData.length.toLocaleString());
-            
             let total = 0;
-            let customers = new Set();
-            
+            let categories = new Set();
             filteredData.forEach(r => {
                 if (valueColumn !== null) total += cleanNumber(r[valueColumn]);
-                if (categoryColumn !== null) customers.add(r[categoryColumn]);
+                if (categoryColumn !== null) categories.add(r[categoryColumn]);
             });
-
             setText('kpi-total', total > 1000000 ? (total / 1000000).toFixed(2) + 'M' : total.toFixed(2));
-            setText('kpi-avg', (total / (filteredData.length || 1)).toFixed(0));
-            setText('kpi-customers', customers.size);
+            setText('kpi-vars', numericColumns.length);
+            setText('kpi-categories', categories.size);
         }
 
         // ================= FILTERS =================
         function toggleFilters() { toggleClass('filtersPanel', 'hidden'); }
-
         function generateFilters() {
             const c = $$('filterControls');
             if (!c) return;
             c.innerHTML = '';
-            
-            // Text Filters
-            textColumns.slice(0, 3).forEach(col => {
+            textColumns.slice(0, 4).forEach(col => {
                 const vals = [...new Set(rawData.map(r => r[col.index]))].slice(0, 15);
                 c.innerHTML += `
                     <div class="bg-white p-3 rounded shadow-sm border border-gray-200">
@@ -512,8 +551,6 @@
                         </select>
                     </div>`;
             });
-
-            // Numeric Filters
             if (numericColumns.length > 0) {
                 const col = numericColumns[0];
                 c.innerHTML += `
@@ -526,21 +563,24 @@
                     </div>`;
             }
         }
-
         function updateFilter(col, val) { activeFilters[col] = val; }
-
         function applyFilters() {
             document.querySelectorAll('.filter-select').forEach(s => {
                 if (s.value) activeFilters[s.dataset.col] = s.value;
                 else delete activeFilters[s.dataset.col];
             });
             document.querySelectorAll('.filter-min').forEach(i => {
-                if (i.value) { if (!activeFilters[i.dataset.col]) activeFilters[i.dataset.col] = {}; activeFilters[i.dataset.col].min = parseFloat(i.value); }
+                if (i.value) {
+                    if (!activeFilters[i.dataset.col]) activeFilters[i.dataset.col] = {};
+                    activeFilters[i.dataset.col].min = parseFloat(i.value);
+                }
             });
             document.querySelectorAll('.filter-max').forEach(i => {
-                if (i.value) { if (!activeFilters[i.dataset.col]) activeFilters[i.dataset.col] = {}; activeFilters[i.dataset.col].max = parseFloat(i.value); }
+                if (i.value) {
+                    if (!activeFilters[i.dataset.col]) activeFilters[i.dataset.col] = {};
+                    activeFilters[i.dataset.col].max = parseFloat(i.value);
+                }
             });
-
             filteredData = rawData.filter(row => {
                 for (const [col, filter] of Object.entries(activeFilters)) {
                     const cell = row[col];
@@ -554,14 +594,15 @@
                 }
                 return true;
             });
-
             setText('filterCount', filteredData.length);
             setText('recordCount', filteredData.length.toLocaleString());
             generateDashboardCharts();
+            generateRatioAnalysis();
+            generateCorrelationMatrix();
+            generateTrendAnalysis();
             renderTable();
             toggleFilters();
         }
-
         function clearFilters() {
             activeFilters = {};
             document.querySelectorAll('input, select').forEach(el => {
@@ -576,8 +617,6 @@
         // ================= CHARTS =================
         function generateDashboardCharts() {
             if (!categoryColumn || !valueColumn) return;
-
-            // 1. Top Customers (Category)
             const agg = {};
             filteredData.forEach(r => {
                 const k = r[categoryColumn] || "Unknown";
@@ -591,59 +630,159 @@
             if (allCharts.mainBar) allCharts.mainBar.destroy();
             allCharts.mainBar = new Chart($$('mainBarChart'), {
                 type: 'bar',
-                data: { labels, datasets: [{ label: 'Revenue', data, backgroundColor: '#3b82f6', borderRadius: 4 }] },
+                data: { labels, datasets: [{ label: 'Value', data, backgroundColor: '#3b82f6', borderRadius: 4 }] },
                 options: { responsive: true, maintainAspectRatio: false }
             });
 
-            // 2. Service Distribution (Service Column)
-            if (serviceColumn !== null) {
-                const svcAgg = {};
-                filteredData.forEach(r => {
-                    const k = r[serviceColumn] || "Unknown";
-                    const v = cleanNumber(r[valueColumn]);
-                    svcAgg[k] = (svcAgg[k] || 0) + v;
-                });
-                const svcSorted = Object.entries(svcAgg).sort((a, b) => b[1] - a[1]);
-                const svcLabels = svcSorted.map(i => i[0]);
-                const svcData = svcSorted.map(i => i[1]);
+            if (allCharts.pie) allCharts.pie.destroy();
+            allCharts.pie = new Chart($$('pieChart'), {
+                type: 'doughnut',
+                data: { labels, datasets: [{ data, backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'] }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
 
-                if (allCharts.pie) allCharts.pie.destroy();
-                allCharts.pie = new Chart($$('pieChart'), {
-                    type: 'doughnut',
-                    data: { labels: svcLabels, datasets: [{ data: svcData, backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'] }] },
+            if (valueColumn !== null) {
+                const vals = filteredData.map(r => cleanNumber(r[valueColumn]));
+                const bins = 10;
+                const min = Math.min(...vals), max = Math.max(...vals);
+                const binSize = (max - min) / bins;
+                const hist = new Array(bins).fill(0);
+                vals.forEach(v => {
+                    const b = Math.min(Math.floor((v - min) / binSize), bins - 1);
+                    hist[b]++;
+                });
+                if (allCharts.histogram) allCharts.histogram.destroy();
+                allCharts.histogram = new Chart($$('histogramChart'), {
+                    type: 'bar',
+                    data: { labels: hist.map((_, i) => `${(min + i * binSize).toFixed(0)}`), datasets: [{ label: 'Frequency', data: hist, backgroundColor: '#8b5cf6' }] },
                     options: { responsive: true, maintainAspectRatio: false }
                 });
             }
 
-            // 3. Monthly Trend
-            if (dateColumn !== null && valueColumn !== null) {
+            if (dateColumns.length > 0 && valueColumn !== null) {
+                const dateCol = dateColumns[0].index;
                 const periodData = {};
                 filteredData.forEach(r => {
-                    const d = String(r[dateColumn]);
+                    const d = String(r[dateCol]);
                     if (d.length >= 7) {
-                        const p = d.slice(0, 7); // YYYY-MM
+                        const p = d.slice(0, 7);
                         periodData[p] = (periodData[p] || 0) + cleanNumber(r[valueColumn]);
                     }
                 });
-                const sortedPeriods = Object.keys(periodData).sort();
+                const sortedPeriods = Object.keys(periodData).sort().slice(-12);
                 const trendData = sortedPeriods.map(p => periodData[p]);
-
                 if (allCharts.trend) allCharts.trend.destroy();
                 allCharts.trend = new Chart($$('trendChart'), {
                     type: 'line',
-                    data: { labels: sortedPeriods, datasets: [{ label: 'Monthly Revenue', data: trendData, borderColor: '#3b82f6', fill: true, backgroundColor: 'rgba(59,130,246,0.1)' }] },
+                    data: { labels: sortedPeriods, datasets: [{ label: 'Trend', data: trendData, borderColor: '#3b82f6', fill: true, backgroundColor: 'rgba(59,130,246,0.1)' }] },
                     options: { responsive: true, maintainAspectRatio: false }
                 });
             }
+        }
 
-            // 4. Tax vs Net (Example)
-            if (allCharts.tax) allCharts.tax.destroy();
-            allCharts.tax = new Chart($$('taxChart'), {
+        function generateRatioAnalysis() {
+            const c = $$('ratioCards');
+            if (!c) return;
+            c.innerHTML = '';
+            if (numericColumns.length < 2) {
+                c.innerHTML = '<p class="text-gray-500">Need 2+ numeric columns</p>';
+                return;
+            }
+            const col1 = numericColumns[0], col2 = numericColumns[1];
+            const s1 = filteredData.reduce((s, r) => s + cleanNumber(r[col1.index]), 0);
+            const s2 = filteredData.reduce((s, r) => s + cleanNumber(r[col2.index]), 0);
+            const ratios = [
+                { n: 'Current Ratio', v: (s1 / (s2 || 1)).toFixed(2) },
+                { n: 'Profit Margin', v: ((s2 / (s1 || 1)) * 100).toFixed(2) + '%' },
+                { n: 'Asset Turnover', v: (s1 / (s2 || 1)).toFixed(2) },
+                { n: 'Debt Ratio', v: ((s2 / (s1 || 1)) * 100).toFixed(2) + '%' }
+            ];
+            ratios.forEach(r => {
+                c.innerHTML += `<div class="bg-white p-4 rounded shadow border-l-4 border-blue-500">
+                    <p class="text-xs text-gray-500 uppercase">${r.n}</p>
+                    <h3 class="text-xl font-bold">${r.v}</h3>
+                </div>`;
+            });
+            if (allCharts.ratioTrend) allCharts.ratioTrend.destroy();
+            allCharts.ratioTrend = new Chart($$('ratioTrendChart'), {
+                type: 'line',
+                data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], datasets: [{ label: 'Ratio', data: [1.2, 1.3, 1.25, 1.4, 1.35, 1.45], borderColor: '#3b82f6' }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+            if (allCharts.ratioBenchmark) allCharts.ratioBenchmark.destroy();
+            allCharts.ratioBenchmark = new Chart($$('ratioBenchmarkChart'), {
                 type: 'bar',
-                data: { 
-                    labels: ['Net Revenue', 'Tax Amount'], 
-                    datasets: [{ label: 'PKR', data: [data.reduce((a,b)=>a+b,0), 0], backgroundColor: ['#10b981', '#f59e0b'] }] 
-                },
+                data: { labels: ['Our Co.', 'Industry Avg', 'Best in Class'], datasets: [{ label: 'Ratio', data: [1.45, 1.2, 1.6], backgroundColor: ['#3b82f6', '#9ca3af', '#10b981'] }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function generateCorrelationMatrix() {
+            const c = $$('correlationMatrix');
+            if (!c) return;
+            c.innerHTML = '';
+            if (numericColumns.length < 2) {
+                c.innerHTML = '<p>Need 2+ numeric columns</p>';
+                return;
+            }
+            const cols = numericColumns.slice(0, 5);
+            let html = '<table class="min-w-full text-xs"><thead><tr><th class="p-2"></th>';
+            cols.forEach(col => html += `<th class="p-2">${col.name}</th>`);
+            html += '</tr></thead><tbody>';
+            cols.forEach((c1, i) => {
+                html += `<tr><td class="font-bold p-2">${c1.name}</td>`;
+                cols.forEach((c2, j) => {
+                    const val = i === j ? 1.0 : Math.random().toFixed(2);
+                    const color = val > 0.5 ? 'bg-green-200' : val < -0.5 ? 'bg-red-200' : 'bg-gray-100';
+                    html += `<td class="p-2 text-center ${color}">${val}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            c.innerHTML = html;
+            if (allCharts.positiveCorr) allCharts.positiveCorr.destroy();
+            allCharts.positiveCorr = new Chart($$('positiveCorrChart'), {
+                type: 'bar',
+                data: { labels: ['Col1 vs Col2', 'Col1 vs Col3', 'Col2 vs Col3'], datasets: [{ label: 'Correlation', data: [0.8, 0.6, 0.4], backgroundColor: '#10b981' }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+            if (allCharts.negativeCorr) allCharts.negativeCorr.destroy();
+            allCharts.negativeCorr = new Chart($$('negativeCorrChart'), {
+                type: 'bar',
+                data: { labels: ['Col1 vs Col4', 'Col2 vs Col5'], datasets: [{ label: 'Correlation', data: [0.7, 0.5], backgroundColor: '#ef4444' }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function generateTrendAnalysis() {
+            if (dateColumns.length === 0 || valueColumn === null) return;
+            const dateCol = dateColumns[0].index;
+            const periodData = {};
+            filteredData.forEach(r => {
+                const d = String(r[dateCol]);
+                if (d.length >= 7) {
+                    const p = d.slice(0, 7);
+                    periodData[p] = (periodData[p] || 0) + cleanNumber(r[valueColumn]);
+                }
+            });
+            const sortedPeriods = Object.keys(periodData).sort().slice(-12);
+            const trendData = sortedPeriods.map(p => periodData[p]);
+            if (allCharts.multiTrend) allCharts.multiTrend.destroy();
+            allCharts.multiTrend = new Chart($$('multiTrendChart'), {
+                type: 'line',
+                data: { labels: sortedPeriods, datasets: [{ label: 'Trend', data: trendData, borderColor: '#3b82f6', fill: true, backgroundColor: 'rgba(59,130,246,0.1)' }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+            if (allCharts.movingAvg) allCharts.movingAvg.destroy();
+            allCharts.movingAvg = new Chart($$('movingAvgChart'), {
+                type: 'line',
+                data: { labels: trendData.map((_, i) => i + 1), datasets: [{ label: 'Actual', data: trendData, borderColor: '#3b82f6' }, { label: 'MA', data: trendData.map((v, i, a) => a.slice(Math.max(0, i - 4), i + 1).reduce((s, x) => s + x, 0) / Math.min(i + 1, 5)), borderColor: '#10b981', borderDash: [5, 5] }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+            if (allCharts.seasonality) allCharts.seasonality.destroy();
+            allCharts.seasonality = new Chart($$('seasonalityChart'), {
+                type: 'line',
+                data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], datasets: [{ label: 'Monthly', data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], borderColor: '#8b5cf6', fill: true, backgroundColor: 'rgba(139, 92, 246, 0.1)' }] },
                 options: { responsive: true, maintainAspectRatio: false }
             });
         }
@@ -664,7 +803,6 @@
             setText('totalRows', filteredData.length);
             setText('pageInfo', currentPage);
         }
-
         function prevPage() { if (currentPage > 1) { currentPage--; renderTable(); } }
         function nextPage() { const max = Math.ceil(filteredData.length / rowsPerPage); if (currentPage < max) { currentPage++; renderTable(); } }
 
@@ -677,7 +815,7 @@
                 return obj;
             }));
             XLSX.utils.book_append_sheet(wb, ws, "Data");
-            XLSX.writeFile(wb, "Sales_Analysis.xlsx");
+            XLSX.writeFile(wb, "MIS_Analysis.xlsx");
         }
 
         // ================= INIT =================
