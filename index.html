@@ -4,15 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oracle Fusion Deep Analysis | MIS Analytics</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- SheetJS for Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- FileSaver for Downloads -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f3f4f6; }
@@ -25,13 +20,12 @@
         .chart-container { position: relative; height: 300px; width: 100%; }
         .loader { border-top-color: #3b82f6; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
         @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .section { display: none; animation: fadeIn 0.3s ease-in-out; }
-        .section.active { display: block; }
+        .section { display: none; }
+        .section.active { display: block; animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         table { border-collapse: collapse; }
         th, td { padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb; }
         th { background-color: #f9fafb; font-weight: 600; }
-        tr:hover { background-color: #f9fafb; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden text-gray-800">
@@ -124,23 +118,6 @@
                         </div>
                     </div>
                     <input type="file" id="fileInput" class="hidden" accept=".xlsx,.xls,.csv">
-                    <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="card p-6">
-                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-3"><i class="fas fa-magic"></i></div>
-                            <h4 class="font-bold">Auto-Detect</h4>
-                            <p class="text-sm text-gray-500 mt-1">Identifies columns, types, and metrics automatically.</p>
-                        </div>
-                        <div class="card p-6">
-                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-3"><i class="fas fa-chart-pie"></i></div>
-                            <h4 class="font-bold">Instant Charts</h4>
-                            <p class="text-sm text-gray-500 mt-1">Visualizations generated immediately upon upload.</p>
-                        </div>
-                        <div class="card p-6">
-                            <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 mb-3"><i class="fas fa-filter"></i></div>
-                            <h4 class="font-bold">Deep Filters</h4>
-                            <p class="text-sm text-gray-500 mt-1">Filter by date, range, or category instantly.</p>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -220,7 +197,7 @@
             <div id="section-correlation" class="section">
                 <div class="card p-6 mb-6">
                     <h4 class="font-bold text-gray-700 mb-2">Correlation Matrix</h4>
-                    <p class="text-sm text-gray-500 mb-6">Identifies relationships between numeric variables (1 = perfect positive)</p>
+                    <p class="text-sm text-gray-500 mb-6">Identifies relationships between numeric variables</p>
                     <div class="overflow-x-auto" id="correlationMatrix"></div>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -327,17 +304,31 @@
         let currentPage = 1;
         let rowsPerPage = 50;
         let activeFilters = {};
-        let correlationMatrix = {};
 
         // ================= SAFE DOM ACCESS =================
         function $$(id) {
             const el = document.getElementById(id);
-            if (!el) { console.warn('Element not found:', id); return null; }
+            if (!el) {
+                console.warn('Element not found:', id);
+                return null;
+            }
             return el;
         }
-        function setText(id, value) { const el = $$(id); if (el) el.innerText = value; }
-        function setHTML(id, value) { const el = $$(id); if (el) el.innerHTML = value; }
-        function toggleClass(id, className) { const el = $$(id); if (el) el.classList.toggle(className); }
+
+        function setText(id, value) {
+            const el = $$(id);
+            if (el) el.innerText = value;
+        }
+
+        function setHTML(id, value) {
+            const el = $$(id);
+            if (el) el.innerHTML = value;
+        }
+
+        function toggleClass(id, className) {
+            const el = $$(id);
+            if (el) el.classList.toggle(className);
+        }
 
         function showLoader(show, text = "Processing...", sub = "Please wait...") {
             const loader = $$('loader');
@@ -351,14 +342,19 @@
 
         // ================= NAVIGATION =================
         function nav(section) {
+            // Hide all sections
             document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+
+            // Show target section
             const target = $$('section-' + section);
             if (target) target.classList.add('active');
 
+            // Update sidebar buttons
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active-nav'));
             const btn = $$('nav-' + section);
             if (btn) btn.classList.add('active-nav');
 
+            // Update title
             const titles = {
                 upload: 'Upload Data',
                 dashboard: 'Dashboard',
@@ -370,17 +366,34 @@
             };
             setText('pageTitle', titles[section] || section);
 
-            if (section === 'dashboard') generateDashboardCharts();
-            if (section === 'data') renderTable();
-            if (section === 'analysis') updateRatioAnalysis();
-            if (section === 'correlation') generateCorrelationMatrix();
-            if (section === 'trends') generateTrendAnalysis();
+            // CRITICAL: Wait for DOM to be ready before rendering charts
+            setTimeout(() => {
+                if (section === 'dashboard') {
+                    console.log('Rendering Dashboard Charts...');
+                    generateDashboardCharts();
+                }
+                if (section === 'data') {
+                    renderTable();
+                }
+                if (section === 'analysis') {
+                    updateRatioAnalysis();
+                }
+                if (section === 'correlation') {
+                    generateCorrelationMatrix();
+                }
+                if (section === 'trends') {
+                    generateTrendAnalysis();
+                }
+            }, 100);
         }
 
-        function resetApp() { if (confirm("Reset all data and filters?")) location.reload(); }
+        function resetApp() {
+            if (confirm("Reset all data and filters?")) location.reload();
+        }
 
         // ================= FILE HANDLING =================
         $$('fileInput').addEventListener('change', handleFileSelect);
+
         function handleFileSelect(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -505,6 +518,7 @@
             });
             if (!valueColumn && numericColumns.length > 0) valueColumn = numericColumns[numericColumns.length - 1].index;
             if (!categoryColumn && textColumns.length > 0) categoryColumn = textColumns[0].index;
+            console.log("Detected - Category:", categoryColumn, "Value:", valueColumn, "Date:", dateColumns.length);
         }
 
         function generateAllAnalysis() {
@@ -512,10 +526,7 @@
             setTimeout(() => {
                 updateKPIs();
                 generateFilters();
-                generateDashboardCharts();
-                generateRatioAnalysis();
-                generateCorrelationMatrix();
-                generateTrendAnalysis();
+                // Don't generate charts here - wait for nav() to render them
                 renderTable();
                 showLoader(false);
             }, 600);
@@ -535,7 +546,10 @@
         }
 
         // ================= FILTERS =================
-        function toggleFilters() { toggleClass('filtersPanel', 'hidden'); }
+        function toggleFilters() {
+            toggleClass('filtersPanel', 'hidden');
+        }
+
         function generateFilters() {
             const c = $$('filterControls');
             if (!c) return;
@@ -563,7 +577,11 @@
                     </div>`;
             }
         }
-        function updateFilter(col, val) { activeFilters[col] = val; }
+
+        function updateFilter(col, val) {
+            activeFilters[col] = val;
+        }
+
         function applyFilters() {
             document.querySelectorAll('.filter-select').forEach(s => {
                 if (s.value) activeFilters[s.dataset.col] = s.value;
@@ -603,6 +621,7 @@
             renderTable();
             toggleFilters();
         }
+
         function clearFilters() {
             activeFilters = {};
             document.querySelectorAll('input, select').forEach(el => {
@@ -616,7 +635,12 @@
 
         // ================= CHARTS =================
         function generateDashboardCharts() {
-            if (!categoryColumn || !valueColumn) return;
+            console.log('Generating Dashboard Charts...');
+            if (!categoryColumn || !valueColumn) {
+                console.log('No category or value column found');
+                return;
+            }
+
             const agg = {};
             filteredData.forEach(r => {
                 const k = r[categoryColumn] || "Unknown";
@@ -627,20 +651,51 @@
             const labels = sorted.map(i => i[0]);
             const data = sorted.map(i => i[1]);
 
-            if (allCharts.mainBar) allCharts.mainBar.destroy();
-            allCharts.mainBar = new Chart($$('mainBarChart'), {
-                type: 'bar',
-                data: { labels, datasets: [{ label: 'Value', data, backgroundColor: '#3b82f6', borderRadius: 4 }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
+            // Main Bar Chart
+            const mainBarCanvas = $$('mainBarChart');
+            if (mainBarCanvas) {
+                if (allCharts.mainBar) allCharts.mainBar.destroy();
+                allCharts.mainBar = new Chart(mainBarCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Value',
+                            data: data,
+                            backgroundColor: '#3b82f6',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+                console.log('Main Bar Chart Created');
+            }
 
-            if (allCharts.pie) allCharts.pie.destroy();
-            allCharts.pie = new Chart($$('pieChart'), {
-                type: 'doughnut',
-                data: { labels, datasets: [{ data, backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'] }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
+            // Pie Chart
+            const pieCanvas = $$('pieChart');
+            if (pieCanvas) {
+                if (allCharts.pie) allCharts.pie.destroy();
+                allCharts.pie = new Chart(pieCanvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+                console.log('Pie Chart Created');
+            }
 
+            // Histogram
             if (valueColumn !== null) {
                 const vals = filteredData.map(r => cleanNumber(r[valueColumn]));
                 const bins = 10;
@@ -651,14 +706,29 @@
                     const b = Math.min(Math.floor((v - min) / binSize), bins - 1);
                     hist[b]++;
                 });
-                if (allCharts.histogram) allCharts.histogram.destroy();
-                allCharts.histogram = new Chart($$('histogramChart'), {
-                    type: 'bar',
-                    data: { labels: hist.map((_, i) => `${(min + i * binSize).toFixed(0)}`), datasets: [{ label: 'Frequency', data: hist, backgroundColor: '#8b5cf6' }] },
-                    options: { responsive: true, maintainAspectRatio: false }
-                });
+                const histogramCanvas = $$('histogramChart');
+                if (histogramCanvas) {
+                    if (allCharts.histogram) allCharts.histogram.destroy();
+                    allCharts.histogram = new Chart(histogramCanvas, {
+                        type: 'bar',
+                        data: {
+                            labels: hist.map((_, i) => `${(min + i * binSize).toFixed(0)}`),
+                            datasets: [{
+                                label: 'Frequency',
+                                data: hist,
+                                backgroundColor: '#8b5cf6'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false
+                        }
+                    });
+                    console.log('Histogram Chart Created');
+                }
             }
 
+            // Trend Chart
             if (dateColumns.length > 0 && valueColumn !== null) {
                 const dateCol = dateColumns[0].index;
                 const periodData = {};
@@ -671,12 +741,28 @@
                 });
                 const sortedPeriods = Object.keys(periodData).sort().slice(-12);
                 const trendData = sortedPeriods.map(p => periodData[p]);
-                if (allCharts.trend) allCharts.trend.destroy();
-                allCharts.trend = new Chart($$('trendChart'), {
-                    type: 'line',
-                    data: { labels: sortedPeriods, datasets: [{ label: 'Trend', data: trendData, borderColor: '#3b82f6', fill: true, backgroundColor: 'rgba(59,130,246,0.1)' }] },
-                    options: { responsive: true, maintainAspectRatio: false }
-                });
+                const trendCanvas = $$('trendChart');
+                if (trendCanvas) {
+                    if (allCharts.trend) allCharts.trend.destroy();
+                    allCharts.trend = new Chart(trendCanvas, {
+                        type: 'line',
+                        data: {
+                            labels: sortedPeriods,
+                            datasets: [{
+                                label: 'Trend',
+                                data: trendData,
+                                borderColor: '#3b82f6',
+                                fill: true,
+                                backgroundColor: 'rgba(59,130,246,0.1)'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false
+                        }
+                    });
+                    console.log('Trend Chart Created');
+                }
             }
         }
 
@@ -703,18 +789,46 @@
                     <h3 class="text-xl font-bold">${r.v}</h3>
                 </div>`;
             });
-            if (allCharts.ratioTrend) allCharts.ratioTrend.destroy();
-            allCharts.ratioTrend = new Chart($$('ratioTrendChart'), {
-                type: 'line',
-                data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], datasets: [{ label: 'Ratio', data: [1.2, 1.3, 1.25, 1.4, 1.35, 1.45], borderColor: '#3b82f6' }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-            if (allCharts.ratioBenchmark) allCharts.ratioBenchmark.destroy();
-            allCharts.ratioBenchmark = new Chart($$('ratioBenchmarkChart'), {
-                type: 'bar',
-                data: { labels: ['Our Co.', 'Industry Avg', 'Best in Class'], datasets: [{ label: 'Ratio', data: [1.45, 1.2, 1.6], backgroundColor: ['#3b82f6', '#9ca3af', '#10b981'] }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
+
+            const ratioTrendCanvas = $$('ratioTrendChart');
+            if (ratioTrendCanvas) {
+                if (allCharts.ratioTrend) allCharts.ratioTrend.destroy();
+                allCharts.ratioTrend = new Chart(ratioTrendCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'Ratio',
+                            data: [1.2, 1.3, 1.25, 1.4, 1.35, 1.45],
+                            borderColor: '#3b82f6'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+
+            const ratioBenchmarkCanvas = $$('ratioBenchmarkChart');
+            if (ratioBenchmarkCanvas) {
+                if (allCharts.ratioBenchmark) allCharts.ratioBenchmark.destroy();
+                allCharts.ratioBenchmark = new Chart(ratioBenchmarkCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Our Co.', 'Industry Avg', 'Best in Class'],
+                        datasets: [{
+                            label: 'Ratio',
+                            data: [1.45, 1.2, 1.6],
+                            backgroundColor: ['#3b82f6', '#9ca3af', '#10b981']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
         }
 
         function generateCorrelationMatrix() {
@@ -740,22 +854,54 @@
             });
             html += '</tbody></table>';
             c.innerHTML = html;
-            if (allCharts.positiveCorr) allCharts.positiveCorr.destroy();
-            allCharts.positiveCorr = new Chart($$('positiveCorrChart'), {
-                type: 'bar',
-                data: { labels: ['Col1 vs Col2', 'Col1 vs Col3', 'Col2 vs Col3'], datasets: [{ label: 'Correlation', data: [0.8, 0.6, 0.4], backgroundColor: '#10b981' }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-            if (allCharts.negativeCorr) allCharts.negativeCorr.destroy();
-            allCharts.negativeCorr = new Chart($$('negativeCorrChart'), {
-                type: 'bar',
-                data: { labels: ['Col1 vs Col4', 'Col2 vs Col5'], datasets: [{ label: 'Correlation', data: [0.7, 0.5], backgroundColor: '#ef4444' }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
+
+            const positiveCorrCanvas = $$('positiveCorrChart');
+            if (positiveCorrCanvas) {
+                if (allCharts.positiveCorr) allCharts.positiveCorr.destroy();
+                allCharts.positiveCorr = new Chart(positiveCorrCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Col1 vs Col2', 'Col1 vs Col3', 'Col2 vs Col3'],
+                        datasets: [{
+                            label: 'Correlation',
+                            data: [0.8, 0.6, 0.4],
+                            backgroundColor: '#10b981'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+
+            const negativeCorrCanvas = $$('negativeCorrChart');
+            if (negativeCorrCanvas) {
+                if (allCharts.negativeCorr) allCharts.negativeCorr.destroy();
+                allCharts.negativeCorr = new Chart(negativeCorrCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Col1 vs Col4', 'Col2 vs Col5'],
+                        datasets: [{
+                            label: 'Correlation',
+                            data: [0.7, 0.5],
+                            backgroundColor: '#ef4444'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
         }
 
         function generateTrendAnalysis() {
-            if (dateColumns.length === 0 || valueColumn === null) return;
+            console.log('Generating Trend Analysis...');
+            if (dateColumns.length === 0 || valueColumn === null) {
+                console.log('No date or value column for trends');
+                return;
+            }
             const dateCol = dateColumns[0].index;
             const periodData = {};
             filteredData.forEach(r => {
@@ -767,24 +913,84 @@
             });
             const sortedPeriods = Object.keys(periodData).sort().slice(-12);
             const trendData = sortedPeriods.map(p => periodData[p]);
-            if (allCharts.multiTrend) allCharts.multiTrend.destroy();
-            allCharts.multiTrend = new Chart($$('multiTrendChart'), {
-                type: 'line',
-                data: { labels: sortedPeriods, datasets: [{ label: 'Trend', data: trendData, borderColor: '#3b82f6', fill: true, backgroundColor: 'rgba(59,130,246,0.1)' }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-            if (allCharts.movingAvg) allCharts.movingAvg.destroy();
-            allCharts.movingAvg = new Chart($$('movingAvgChart'), {
-                type: 'line',
-                data: { labels: trendData.map((_, i) => i + 1), datasets: [{ label: 'Actual', data: trendData, borderColor: '#3b82f6' }, { label: 'MA', data: trendData.map((v, i, a) => a.slice(Math.max(0, i - 4), i + 1).reduce((s, x) => s + x, 0) / Math.min(i + 1, 5)), borderColor: '#10b981', borderDash: [5, 5] }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-            if (allCharts.seasonality) allCharts.seasonality.destroy();
-            allCharts.seasonality = new Chart($$('seasonalityChart'), {
-                type: 'line',
-                data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], datasets: [{ label: 'Monthly', data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], borderColor: '#8b5cf6', fill: true, backgroundColor: 'rgba(139, 92, 246, 0.1)' }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
+
+            // Multi Trend Chart
+            const multiTrendCanvas = $$('multiTrendChart');
+            if (multiTrendCanvas) {
+                if (allCharts.multiTrend) allCharts.multiTrend.destroy();
+                allCharts.multiTrend = new Chart(multiTrendCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: sortedPeriods,
+                        datasets: [{
+                            label: 'Trend',
+                            data: trendData,
+                            borderColor: '#3b82f6',
+                            fill: true,
+                            backgroundColor: 'rgba(59,130,246,0.1)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+                console.log('Multi Trend Chart Created');
+            }
+
+            // Moving Average Chart
+            const movingAvgCanvas = $$('movingAvgChart');
+            if (movingAvgCanvas) {
+                if (allCharts.movingAvg) allCharts.movingAvg.destroy();
+                allCharts.movingAvg = new Chart(movingAvgCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: trendData.map((_, i) => i + 1),
+                        datasets: [
+                            {
+                                label: 'Actual',
+                                data: trendData,
+                                borderColor: '#3b82f6'
+                            },
+                            {
+                                label: 'MA',
+                                data: trendData.map((v, i, a) => a.slice(Math.max(0, i - 4), i + 1).reduce((s, x) => s + x, 0) / Math.min(i + 1, 5)),
+                                borderColor: '#10b981',
+                                borderDash: [5, 5]
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+                console.log('Moving Avg Chart Created');
+            }
+
+            // Seasonality Chart
+            const seasonalityCanvas = $$('seasonalityChart');
+            if (seasonalityCanvas) {
+                if (allCharts.seasonality) allCharts.seasonality.destroy();
+                allCharts.seasonality = new Chart(seasonalityCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                        datasets: [{
+                            label: 'Monthly',
+                            data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                            borderColor: '#8b5cf6',
+                            fill: true,
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+                console.log('Seasonality Chart Created');
+            }
         }
 
         // ================= TABLE =================
@@ -803,8 +1009,21 @@
             setText('totalRows', filteredData.length);
             setText('pageInfo', currentPage);
         }
-        function prevPage() { if (currentPage > 1) { currentPage--; renderTable(); } }
-        function nextPage() { const max = Math.ceil(filteredData.length / rowsPerPage); if (currentPage < max) { currentPage++; renderTable(); } }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTable();
+            }
+        }
+
+        function nextPage() {
+            const max = Math.ceil(filteredData.length / rowsPerPage);
+            if (currentPage < max) {
+                currentPage++;
+                renderTable();
+            }
+        }
 
         // ================= EXPORT =================
         function downloadExcel(type) {
