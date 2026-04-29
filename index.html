@@ -17,19 +17,62 @@
     <!-- SortableJS for drag-drop -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; }
-        .sidebar { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; min-height: 100vh; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: all 0.3s; }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
-        .chart-container { position: relative; height: 300px; }
-        .loader { border-top-color: #3b82f6; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
-        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .filter-active { border: 2px solid #3b82f6; background-color: #eff6ff; }
-        .metric-trend-up { color: #10b981; }
-        .metric-trend-down { color: #ef4444; }
-        .metric-trend-neutral { color: #6b7280; }
-        .analysis-panel { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); }
-        .drill-highlight { background-color: #dbeafe; border-left: 4px solid #3b82f6; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        .loader {
+            border-top-color: #3b82f6;
+            -webkit-animation: spinner 1.5s linear infinite;
+            animation: spinner 1.5s linear infinite;
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .filter-active {
+            border: 2px solid #3b82f6;
+            background-color: #eff6ff;
+        }
+        .metric-trend-up {
+            color: #10b981;
+        }
+        .metric-trend-down {
+            color: #ef4444;
+        }
+        .metric-trend-neutral {
+            color: #6b7280;
+        }
+        .analysis-panel {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        }
+        .drill-highlight {
+            background-color: #dbeafe;
+            border-left: 4px solid #3b82f6;
+        }
+        .nav-btn.active-nav {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-left: 4px solid white;
+        }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
@@ -40,13 +83,27 @@
             <p class="text-xs opacity-80 mt-1">Oracle Fusion Deep Analysis</p>
         </div>
         <nav class="flex-1 space-y-2">
-            <button onclick="nav('upload')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10 active-nav"><i class="fas fa-upload mr-3"></i>Upload Data</button>
-            <button onclick="nav('dashboard')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10"><i class="fas fa-tachometer-alt mr-3"></i>Dashboard</button>
-            <button onclick="nav('analysis')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10"><i class="fas fa-search-dollar mr-3"></i>Ratio Analysis</button>
-            <button onclick="nav('correlation')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10"><i class="fas fa-project-diagram mr-3"></i>Correlation</button>
-            <button onclick="nav('trends')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10"><i class="fas fa-chart-line mr-3"></i>Trend Analysis</button>
-            <button onclick="nav('data')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10"><i class="fas fa-table mr-3"></i>Data View</button>
-            <button onclick="nav('export')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10"><i class="fas fa-download mr-3"></i>Export Reports</button>
+            <button onclick="nav('upload')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10 active-nav">
+                <i class="fas fa-upload mr-3"></i>Upload Data
+            </button>
+            <button onclick="nav('dashboard')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10">
+                <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
+            </button>
+            <button onclick="nav('analysis')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10">
+                <i class="fas fa-search-dollar mr-3"></i>Ratio Analysis
+            </button>
+            <button onclick="nav('correlation')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10">
+                <i class="fas fa-project-diagram mr-3"></i>Correlation
+            </button>
+            <button onclick="nav('trends')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10">
+                <i class="fas fa-chart-line mr-3"></i>Trend Analysis
+            </button>
+            <button onclick="nav('data')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10">
+                <i class="fas fa-table mr-3"></i>Data View
+            </button>
+            <button onclick="nav('export')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10">
+                <i class="fas fa-download mr-3"></i>Export Reports
+            </button>
         </nav>
         <div class="mt-auto p-4 bg-white/10 rounded-lg text-xs">
             <p>Records: <span id="recordCount">0</span></p>
@@ -110,10 +167,11 @@
                         <p class="text-xs text-gray-400 mt-4">Auto-detects Balance Sheet, PNL, Fixed Assets, Telecom Metrics</p>
                     </div>
                     <input type="file" id="fileInput" class="hidden" accept=".xlsx,.xls,.csv">
-                    
                     <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                         <div class="bg-white p-4 rounded-lg shadow-sm">
-                            <h4 class="font-bold text-gray-700 mb-2"><i class="fas fa-check-circle text-green-500 mr-2"></i>What We Analyze:</h4>
+                            <h4 class="font-bold text-gray-700 mb-2">
+                                <i class="fas fa-check-circle text-green-500 mr-2"></i>What We Analyze:
+                            </h4>
                             <ul class="text-sm text-gray-600 space-y-1">
                                 <li>• Automatic Ratio Calculation</li>
                                 <li>• Trend & Correlation Analysis</li>
@@ -122,7 +180,9 @@
                             </ul>
                         </div>
                         <div class="bg-white p-4 rounded-lg shadow-sm">
-                            <h4 class="font-bold text-gray-700 mb-2"><i class="fas fa-file-alt text-blue-500 mr-2"></i>Supported Reports:</h4>
+                            <h4 class="font-bold text-gray-700 mb-2">
+                                <i class="fas fa-file-alt text-blue-500 mr-2"></i>Supported Reports:
+                            </h4>
                             <ul class="text-sm text-gray-600 space-y-1">
                                 <li>• Balance Sheet & PNL</li>
                                 <li>• Fixed Assets Register</li>
@@ -167,8 +227,7 @@
                 <!-- Trend Analysis -->
                 <div class="card p-6 mb-6">
                     <h4 class="font-bold text-gray-700 mb-4 flex items-center">
-                        <i class="fas fa-chart-line text-blue-600 mr-2"></i>
-                        Trend Analysis (Last 12 Periods)
+                        <i class="fas fa-chart-line text-blue-600 mr-2"></i> Trend Analysis (Last 12 Periods)
                         <select id="trendColumn" onchange="updateTrendChart()" class="ml-auto border rounded px-3 py-1 text-sm"></select>
                     </h4>
                     <div class="chart-container">
@@ -180,9 +239,10 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     <div class="card p-6">
                         <h4 class="font-bold text-gray-700 mb-4 flex items-center">
-                            <i class="fas fa-chart-bar text-blue-600 mr-2"></i>
-                            Top 15 Contributors (Click to Drill Down)
-                            <button onclick="exportChart('mainBar')" class="ml-auto text-gray-500 hover:text-blue-600"><i class="fas fa-download"></i></button>
+                            <i class="fas fa-chart-bar text-blue-600 mr-2"></i> Top 15 Contributors (Click to Drill Down)
+                            <button onclick="exportChart('mainBar')" class="ml-auto text-gray-500 hover:text-blue-600">
+                                <i class="fas fa-download"></i>
+                            </button>
                         </h4>
                         <div class="chart-container">
                             <canvas id="mainBarChart"></canvas>
@@ -190,9 +250,10 @@
                     </div>
                     <div class="card p-6">
                         <h4 class="font-bold text-gray-700 mb-4 flex items-center">
-                            <i class="fas fa-chart-pie text-green-600 mr-2"></i>
-                            Distribution Analysis
-                            <button onclick="exportChart('pie')" class="ml-auto text-gray-500 hover:text-green-600"><i class="fas fa-download"></i></button>
+                            <i class="fas fa-chart-pie text-green-600 mr-2"></i> Distribution Analysis
+                            <button onclick="exportChart('pie')" class="ml-auto text-gray-500 hover:text-green-600">
+                                <i class="fas fa-download"></i>
+                            </button>
                         </h4>
                         <div class="chart-container">
                             <canvas id="pieChart"></canvas>
@@ -247,7 +308,6 @@
                         <!-- Ratios will be dynamically generated -->
                     </div>
                 </div>
-
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     <div class="card p-6">
                         <h4 class="font-bold text-gray-700 mb-4">Ratio Trend Analysis</h4>
@@ -262,7 +322,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="card p-6">
                     <h4 class="font-bold text-gray-700 mb-4">Variable Linkage Analysis</h4>
                     <p class="text-sm text-gray-600 mb-4">Shows how changes in one variable impact others</p>
@@ -284,7 +343,6 @@
                         <!-- Correlation matrix will be generated -->
                     </div>
                 </div>
-
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="card p-6">
                         <h4 class="font-bold text-gray-700 mb-4">Top Positive Correlations</h4>
@@ -312,7 +370,6 @@
                         <canvas id="multiTrendChart"></canvas>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="card p-6">
                         <h4 class="font-bold text-gray-700 mb-4">Moving Average Analysis</h4>
@@ -427,14 +484,17 @@
             document.querySelectorAll('.section').forEach(el => el.classList.add('hidden'));
             document.getElementById('section-' + section).classList.remove('hidden');
             
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('bg-white/20', 'border-l-4', 'border-white'));
+            // Update active nav button
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-white/20', 'border-l-4', 'border-white');
+            });
             const navBtns = document.querySelectorAll('.nav-btn');
             const sections = ['upload', 'dashboard', 'analysis', 'correlation', 'trends', 'data', 'export'];
             const index = sections.indexOf(section);
             if (index >= 0 && navBtns[index]) {
                 navBtns[index].classList.add('bg-white/20', 'border-l-4', 'border-white');
             }
-
+            
             const titles = {
                 upload: 'Upload Data',
                 dashboard: 'Dashboard',
@@ -453,19 +513,34 @@
             }
         }
 
+        // ================= LOADER =================
+        function showLoader(show, text = "Processing Data...", subtext = "Analyzing variables, calculating ratios...") {
+            const loader = document.getElementById('loader');
+            const loadingText = document.getElementById('loadingText');
+            const loadingSub = document.getElementById('loadingSub');
+            
+            if (show) {
+                loader.classList.remove('hidden');
+                loadingText.innerText = text;
+                loadingSub.innerText = subtext;
+            } else {
+                loader.classList.add('hidden');
+            }
+        }
+
         // ================= FILE HANDLING =================
         document.getElementById('fileInput').addEventListener('change', handleFileSelect);
 
         function handleFileSelect(e) {
             const file = e.target.files[0];
             if (!file) return;
-
+            
             if (file.size > 100 * 1024 * 1024) {
                 alert("File is too large (>100MB). Please reduce the file size.");
                 return;
             }
-
-            showLoader(true, "Reading File...");
+            
+            showLoader(true, "Reading File...", "Parsing Excel/CSV data...");
             const reader = new FileReader();
             reader.onload = function(e) {
                 const data = new Uint8Array(e.target.result);
@@ -488,16 +563,16 @@
                     break;
                 }
             }
-
+            
             if (headerRowIndex === -1) {
                 showLoader(false);
                 alert("Could not detect headers. Please ensure the file has column names.");
                 return;
             }
-
+            
             headers = rows[headerRowIndex].map(h => String(h).trim());
             rawData = rows.slice(headerRowIndex + 1).filter(row => row.length > 0 && row.some(cell => cell !== ""));
-
+            
             // Detect column types
             detectColumnTypes();
             
@@ -507,8 +582,8 @@
             // Update UI
             document.getElementById('recordCount').innerText = rawData.length.toLocaleString();
             document.getElementById('columnCount').innerText = headers.length;
-            
             showLoader(false);
+            
             generateAllAnalysis();
             nav('dashboard');
         }
@@ -519,17 +594,16 @@
             dateColumns = [];
             categoryColumn = null;
             valueColumn = null;
-
+            
             const sampleSize = Math.min(rawData.length, 100);
-
             headers.forEach((h, idx) => {
                 let numeric = 0, date = 0, text = 0;
                 const lower = h.toLowerCase();
-
+                
                 for (let i = 0; i < sampleSize; i++) {
                     const value = rawData[i][idx];
                     if (value === null || value === undefined || value === '') continue;
-
+                    
                     if (!isNaN(parseFloat(value)) && isFinite(value)) {
                         numeric++;
                     } else if (isValidDate(value)) {
@@ -538,7 +612,7 @@
                         text++;
                     }
                 }
-
+                
                 if (numeric > sampleSize * 0.7) {
                     numericColumns.push({ index: idx, name: h });
                 } else if (date > sampleSize * 0.7) {
@@ -546,7 +620,7 @@
                 } else {
                     textColumns.push({ index: idx, name: h });
                 }
-
+                
                 // Auto-detect category and value columns
                 if (!categoryColumn && (lower.includes('name') || lower.includes('id') || lower.includes('account') || lower.includes('dept') || lower.includes('region'))) {
                     categoryColumn = idx;
@@ -555,7 +629,7 @@
                     valueColumn = idx;
                 }
             });
-
+            
             // Fallbacks
             if (!categoryColumn && textColumns.length > 0) categoryColumn = textColumns[0].index;
             if (!valueColumn && numericColumns.length > 0) valueColumn = numericColumns[0].index;
@@ -568,8 +642,7 @@
 
         // ================= ANALYSIS GENERATION =================
         function generateAllAnalysis() {
-            showLoader(true, "Generating Analysis...");
-            
+            showLoader(true, "Generating Analysis...", "Creating charts and calculations...");
             setTimeout(() => {
                 updateKPIs();
                 generateFilters();
@@ -584,18 +657,16 @@
 
         function updateKPIs() {
             document.getElementById('kpi-records').innerText = rawData.length.toLocaleString();
-            
             let total = 0;
-            if (valueColumn !== null) {
+            if (valueColumn !== null && valueColumn < headers.length) {
                 total = rawData.reduce((sum, row) => sum + (parseFloat(row[valueColumn]) || 0), 0);
             }
             document.getElementById('kpi-total').innerText = formatNumber(total);
             document.getElementById('kpi-avg').innerText = formatNumber(total / rawData.length);
-
+            
             const emptyCount = rawData.filter(r => isNaN(parseFloat(r[valueColumn || 0]))).length;
             const quality = Math.round(((rawData.length - emptyCount) / rawData.length) * 100);
             document.getElementById('kpi-quality').innerText = quality + '%';
-
             document.getElementById('kpi-vars').innerText = numericColumns.length;
             document.getElementById('kpi-charts').innerText = '15+';
         }
@@ -610,7 +681,7 @@
         function generateFilters() {
             const container = document.getElementById('filterControls');
             container.innerHTML = '';
-
+            
             // Add filters for category columns
             textColumns.forEach(col => {
                 const uniqueValues = [...new Set(rawData.map(row => row[col.index]))].slice(0, 20);
@@ -625,14 +696,13 @@
                 `;
                 container.appendChild(filterDiv);
             });
-
+            
             // Add value range filter
             if (numericColumns.length > 0) {
                 const valueCol = numericColumns[0];
                 const values = rawData.map(r => parseFloat(r[valueCol.index]) || 0);
                 const min = Math.min(...values);
                 const max = Math.max(...values);
-
                 const filterDiv = document.createElement('div');
                 filterDiv.className = 'bg-white p-3 rounded-lg shadow-sm';
                 filterDiv.innerHTML = `
@@ -654,15 +724,14 @@
             const filterSelects = document.querySelectorAll('.filter-select');
             const filterMins = document.querySelectorAll('.filter-min');
             const filterMaxs = document.querySelectorAll('.filter-max');
-
             activeFilters = {};
-
+            
             filterSelects.forEach(select => {
                 const col = parseInt(select.dataset.column);
                 const val = select.value;
                 if (val) activeFilters[col] = val;
             });
-
+            
             filterMins.forEach(input => {
                 const col = parseInt(input.dataset.column);
                 const val = parseFloat(input.value);
@@ -671,7 +740,7 @@
                     activeFilters[col].min = val;
                 }
             });
-
+            
             filterMaxs.forEach(input => {
                 const col = parseInt(input.dataset.column);
                 const val = parseFloat(input.value);
@@ -680,7 +749,7 @@
                     activeFilters[col].max = val;
                 }
             });
-
+            
             applyActiveFilters();
         }
 
@@ -689,7 +758,6 @@
                 for (const [col, filter] of Object.entries(activeFilters)) {
                     const colIdx = parseInt(col);
                     const cellValue = row[colIdx];
-
                     if (typeof filter === 'string' && filter !== '') {
                         if (String(cellValue) !== filter) return false;
                     } else if (typeof filter === 'object') {
@@ -700,10 +768,9 @@
                 }
                 return true;
             });
-
+            
             document.getElementById('drillInfo').classList.remove('hidden');
             document.getElementById('filterCount').innerText = filteredData.length;
-            
             generateDashboardCharts();
             renderTable();
         }
@@ -736,11 +803,11 @@
                     const val = parseFloat(row[valueColumn]) || 0;
                     aggregation[cat] = (aggregation[cat] || 0) + val;
                 });
-
+                
                 const sorted = Object.entries(aggregation).sort((a, b) => b[1] - a[1]).slice(0, 15);
                 const labels = sorted.map(i => i[0]);
                 const data = sorted.map(i => i[1]);
-
+                
                 if (allCharts.mainBar) allCharts.mainBar.destroy();
                 allCharts.mainBar = new Chart(document.getElementById('mainBarChart'), {
                     type: 'bar',
@@ -765,7 +832,7 @@
                     }
                 });
             }
-
+            
             // Pie Chart
             if (categoryColumn !== null && valueColumn !== null) {
                 const aggregation = {};
@@ -774,11 +841,11 @@
                     const val = parseFloat(row[valueColumn]) || 0;
                     aggregation[cat] = (aggregation[cat] || 0) + val;
                 });
-
+                
                 const sorted = Object.entries(aggregation).sort((a, b) => b[1] - a[1]).slice(0, 10);
                 const labels = sorted.map(i => i[0]);
                 const data = sorted.map(i => i[1]);
-
+                
                 if (allCharts.pie) allCharts.pie.destroy();
                 allCharts.pie = new Chart(document.getElementById('pieChart'), {
                     type: 'doughnut',
@@ -795,7 +862,7 @@
                     }
                 });
             }
-
+            
             // Histogram
             if (valueColumn !== null) {
                 const values = filteredData.map(row => parseFloat(row[valueColumn]) || 0);
@@ -804,14 +871,14 @@
                 const max = Math.max(...values);
                 const binSize = (max - min) / bins;
                 const histogram = new Array(bins).fill(0);
-
+                
                 values.forEach(v => {
                     const bin = Math.min(Math.floor((v - min) / binSize), bins - 1);
                     histogram[bin]++;
                 });
-
+                
                 const labels = histogram.map((_, i) => `${(min + i * binSize).toFixed(0)} - ${(min + (i + 1) * binSize).toFixed(0)}`);
-
+                
                 if (allCharts.histogram) allCharts.histogram.destroy();
                 allCharts.histogram = new Chart(document.getElementById('histogramChart'), {
                     type: 'bar',
@@ -829,19 +896,18 @@
                     }
                 });
             }
-
+            
             // Growth Chart
             if (dateColumns.length > 0 && valueColumn !== null) {
                 const dateCol = dateColumns[0].index;
                 const periodData = {};
-
                 filteredData.forEach(row => {
                     const date = row[dateCol];
                     const val = parseFloat(row[valueColumn]) || 0;
-                    const period = String(date).slice(0, 7); // YYYY-MM
+                    const period = String(date).slice(0, 7);
                     periodData[period] = (periodData[period] || 0) + val;
                 });
-
+                
                 const sortedPeriods = Object.keys(periodData).sort();
                 const growth = [];
                 for (let i = 1; i < sortedPeriods.length; i++) {
@@ -849,7 +915,7 @@
                     const curr = periodData[sortedPeriods[i]] || 0;
                     growth.push(((curr - prev) / prev * 100).toFixed(2));
                 }
-
+                
                 if (allCharts.growth) allCharts.growth.destroy();
                 allCharts.growth = new Chart(document.getElementById('growthChart'), {
                     type: 'line',
@@ -869,19 +935,18 @@
                     }
                 });
             }
-
+            
             // Stacked Bar
             if (categoryColumn !== null && numericColumns.length > 1) {
                 const categories = [...new Set(filteredData.map(row => row[categoryColumn]))].slice(0, 10);
                 const datasets = numericColumns.slice(0, 3).map((col, idx) => ({
                     label: col.name,
-                    data: categories.map(cat => 
-                        filteredData.filter(r => r[categoryColumn] === cat)
-                            .reduce((sum, r) => sum + (parseFloat(r[col.index]) || 0), 0)
+                    data: categories.map(cat => filteredData.filter(r => r[categoryColumn] === cat)
+                        .reduce((sum, r) => sum + (parseFloat(r[col.index]) || 0), 0)
                     ),
                     backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'][idx]
                 }));
-
+                
                 if (allCharts.stacked) allCharts.stacked.destroy();
                 allCharts.stacked = new Chart(document.getElementById('stackedBarChart'), {
                     type: 'bar',
@@ -899,28 +964,25 @@
                     }
                 });
             }
-
+            
             // Trend Chart
             if (dateColumns.length > 0 && valueColumn !== null) {
                 const dateCol = dateColumns[0].index;
                 const periodData = {};
-
                 filteredData.forEach(row => {
                     const date = row[dateCol];
                     const val = parseFloat(row[valueColumn]) || 0;
                     const period = String(date).slice(0, 7);
                     periodData[period] = (periodData[period] || 0) + val;
                 });
-
+                
                 const sortedPeriods = Object.keys(periodData).sort().slice(-12);
                 const trendData = sortedPeriods.map(p => periodData[p]);
-
+                
                 // Populate trend column selector
                 const trendSelect = document.getElementById('trendColumn');
-                trendSelect.innerHTML = numericColumns.map(col => 
-                    `<option value="${col.index}">${col.name}</option>`
-                ).join('');
-
+                trendSelect.innerHTML = numericColumns.map(col => `<option value="${col.index}">${col.name}</option>`).join('');
+                
                 if (allCharts.trend) allCharts.trend.destroy();
                 allCharts.trend = new Chart(document.getElementById('trendChart'), {
                     type: 'line',
@@ -958,7 +1020,6 @@
 
         function updateTrendChart() {
             const colIndex = parseInt(document.getElementById('trendColumn').value);
-            // Re-generate trend chart with selected column
             generateDashboardCharts();
         }
 
@@ -971,10 +1032,8 @@
             const ratioType = document.getElementById('ratioType').value;
             const container = document.getElementById('ratioCards');
             container.innerHTML = '';
-
-            // Calculate ratios based on available data
-            const ratios = calculateRatios(ratioType);
             
+            const ratios = calculateRatios(ratioType);
             ratios.forEach(ratio => {
                 const card = document.createElement('div');
                 card.className = 'bg-white p-4 rounded-lg shadow-sm border-l-4 ' + ratio.color;
@@ -987,21 +1046,17 @@
                 `;
                 container.appendChild(card);
             });
-
-            // Generate ratio trend chart
+            
             generateRatioTrendChart();
             generateRatioBenchmarkChart();
             generateLinkageTable();
         }
 
         function calculateRatios(type) {
-            // Simplified ratio calculations - adapt based on actual data structure
             const ratios = [];
-            
             if (numericColumns.length >= 2) {
                 const col1 = numericColumns[0];
                 const col2 = numericColumns[1];
-                
                 const sum1 = filteredData.reduce((sum, r) => sum + (parseFloat(r[col1.index]) || 0), 0);
                 const sum2 = filteredData.reduce((sum, r) => sum + (parseFloat(r[col2.index]) || 0), 0);
                 
@@ -1023,19 +1078,16 @@
                     ratios.push({ name: 'Interest Coverage', value: (sum1 / (sum2 * 0.1)).toFixed(2), trend: 'up', change: '+6.7%', color: 'border-blue-500' });
                 }
             }
-
-            // Ensure we have at least 4 ratios
+            
             while (ratios.length < 4) {
                 ratios.push({ name: 'Custom Ratio ' + (ratios.length + 1), value: '0.00', trend: 'neutral', change: '0.0%', color: 'border-gray-500' });
             }
-
             return ratios.slice(0, 4);
         }
 
         function generateRatioTrendChart() {
             const ctx = document.getElementById('ratioTrendChart').getContext('2d');
             if (allCharts.ratioTrend) allCharts.ratioTrend.destroy();
-
             allCharts.ratioTrend = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -1057,7 +1109,6 @@
         function generateRatioBenchmarkChart() {
             const ctx = document.getElementById('ratioBenchmarkChart').getContext('2d');
             if (allCharts.ratioBenchmark) allCharts.ratioBenchmark.destroy();
-
             allCharts.ratioBenchmark = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -1078,7 +1129,6 @@
         function generateLinkageTable() {
             const header = document.getElementById('linkageHeader');
             const body = document.getElementById('linkageBody');
-
             const linkageData = [
                 { variable: 'Revenue', impact: 'Direct', sensitivity: '+1.0%', risk: 'Low' },
                 { variable: 'Cost of Sales', impact: 'Inverse', sensitivity: '-0.8%', risk: 'Medium' },
@@ -1086,7 +1136,7 @@
                 { variable: 'Net Income', impact: 'Direct', sensitivity: '+0.9%', risk: 'Low' },
                 { variable: 'EBITDA', impact: 'Direct', sensitivity: '+0.85%', risk: 'Low' }
             ];
-
+            
             header.innerHTML = '<tr><th class="p-3 text-left">Variable</th><th class="p-3 text-left">Impact</th><th class="p-3 text-left">Sensitivity</th><th class="p-3 text-left">Risk Level</th></tr>';
             body.innerHTML = linkageData.map(d => `
                 <tr class="border-b">
@@ -1101,12 +1151,11 @@
         // ================= CORRELATION ANALYSIS =================
         function generateCorrelationMatrix() {
             if (numericColumns.length < 2) return;
-
-            // Calculate correlation matrix
-            const cols = numericColumns.slice(0, 6); // Limit to 6 for performance
+            
+            const cols = numericColumns.slice(0, 6);
             const n = cols.length;
             const matrix = [];
-
+            
             for (let i = 0; i < n; i++) {
                 matrix[i] = [];
                 for (let j = 0; j < n; j++) {
@@ -1117,15 +1166,14 @@
                     }
                 }
             }
-
+            
             correlationMatrix = { cols: cols, matrix: matrix };
-
-            // Render matrix
+            
             const container = document.getElementById('correlationMatrix');
             let html = '<table class="min-w-full text-xs"><thead><tr><th class="p-2"></th>';
             cols.forEach(col => html += `<th class="p-2">${col.name}</th>`);
             html += '</tr></thead><tbody>';
-
+            
             cols.forEach((col, i) => {
                 html += `<tr><td class="p-2 font-bold">${col.name}</td>`;
                 for (let j = 0; j < n; j++) {
@@ -1137,8 +1185,7 @@
             });
             html += '</tbody></table>';
             container.innerHTML = html;
-
-            // Generate correlation charts
+            
             generateCorrelationCharts();
         }
 
@@ -1163,7 +1210,7 @@
         function generateCorrelationCharts() {
             const positiveCorr = [];
             const negativeCorr = [];
-
+            
             if (correlationMatrix.matrix) {
                 for (let i = 0; i < correlationMatrix.cols.length; i++) {
                     for (let j = i + 1; j < correlationMatrix.cols.length; j++) {
@@ -1177,8 +1224,7 @@
                     }
                 }
             }
-
-            // Positive correlations
+            
             const ctx1 = document.getElementById('positiveCorrChart').getContext('2d');
             if (allCharts.positiveCorr) allCharts.positiveCorr.destroy();
             allCharts.positiveCorr = new Chart(ctx1, {
@@ -1197,8 +1243,7 @@
                     indexAxis: 'y'
                 }
             });
-
-            // Negative correlations
+            
             const ctx2 = document.getElementById('negativeCorrChart').getContext('2d');
             if (allCharts.negativeCorr) allCharts.negativeCorr.destroy();
             allCharts.negativeCorr = new Chart(ctx2, {
@@ -1238,7 +1283,7 @@
                         tension: 0.4
                     };
                 });
-
+                
                 const ctx = document.getElementById('multiTrendChart').getContext('2d');
                 if (allCharts.multiTrend) allCharts.multiTrend.destroy();
                 allCharts.multiTrend = new Chart(ctx, {
@@ -1253,7 +1298,7 @@
                     }
                 });
             }
-
+            
             // Moving average
             if (valueColumn !== null) {
                 const values = filteredData.map(r => parseFloat(r[valueColumn]) || 0);
@@ -1264,7 +1309,7 @@
                     const sum = values.slice(start, i + 1).reduce((a, b) => a + b, 0);
                     ma.push(sum / (i - start + 1));
                 }
-
+                
                 const ctx = document.getElementById('movingAvgChart').getContext('2d');
                 if (allCharts.movingAvg) allCharts.movingAvg.destroy();
                 allCharts.movingAvg = new Chart(ctx, {
@@ -1282,7 +1327,7 @@
                     }
                 });
             }
-
+            
             // Seasonality
             if (dateColumns.length > 0 && valueColumn !== null) {
                 const dateCol = dateColumns[0].index;
@@ -1290,76 +1335,15 @@
                 for (let m = 1; m <= 12; m++) {
                     monthlyData[m] = 0;
                 }
-
                 filteredData.forEach(row => {
                     const dateStr = String(row[dateCol]);
                     const month = parseInt(dateStr.split('-')[1]) || 1;
                     monthlyData[month] += parseFloat(row[valueColumn]) || 0;
                 });
-
+                
                 const ctx = document.getElementById('seasonalityChart').getContext('2d');
                 if (allCharts.seasonality) allCharts.seasonality.destroy();
                 allCharts.seasonality = new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                        datasets: [{
-                            label: 'Monthly Pattern',
-                            data: Object.values(monthlyData),
-                            borderColor: '#8b5cf6',
-                            fill: true,
-                            backgroundColor: 'rgba(139, 92, 246, 0.1)'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false
-                    }
-                });
-            }
-        }
-
-        // ================= DATA TABLE =================
-        function renderTable() {
-            const thead = document.getElementById('tableHeader');
-            const tbody = document.getElementById('tableBody');
-            const rowsPerPageSelect = document.getElementById('rowsPerPage');
-            rowsPerPage = parseInt(rowsPerPageSelect.value);
-
-            thead.innerHTML = headers.map(h => `<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${h}</th>`).join('');
-
-            const start = (currentPage - 1) * rowsPerPage;
-            const end = Math.min(start + rowsPerPage, filteredData.length);
-            const displayData = filteredData.slice(start, end);
-
-            tbody.innerHTML = displayData.map(row => {
-                return `<tr>${row.map(cell => `<td class="px-6 py-4 whitespace-nowrap text-gray-700">${cell || ''}</td>`).join('')}</tr>`;
-            }).join('');
-
-            document.getElementById('showingFrom').innerText = start + 1;
-            document.getElementById('showingTo').innerText = end;
-            document.getElementById('totalRows').innerText = filteredData.length;
-            document.getElementById('pageInfo').innerText = currentPage;
-        }
-
-        function filterTable() {
-            const term = document.getElementById('searchInput').value.toLowerCase();
-            const displayData = filteredData.filter(row => row.some(cell => String(cell).toLowerCase().includes(term))).slice(0, 1000);
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = displayData.map(row => {
-                return `<tr>${row.map(cell => `<td class="px-6 py-4 whitespace-nowrap text-gray-700">${cell || ''}</td>`).join('')}</tr>`;
-            }).join('');
-        }
-
-        function prevPage() {
-            if (currentPage > 1) {
-                currentPage--;
-                renderTable();
-            }
-        }
-
-        function nextPage() {
-            const maxPage = Math.ceil(filteredData.length / rowsPerPage);
-            if (currentPage < maxPage) {
-                currentPage++;
-                render
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May',
