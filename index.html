@@ -3,787 +3,471 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeleMIS Pro | Telecom MIS with File Analysis</title>
+    <title>Oracle MIS Analyzer | Telecom & Finance</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- SheetJS for Excel/CSV Parsing -->
+    <!-- SheetJS (Excel Processing) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- PapaParse for CSV -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <!-- FileSaver for Downloads -->
+    <!-- FileSaver -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .gradient-bg { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); }
-        .card { transition: transform 0.2s, box-shadow 0.2s; }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
-        .sidebar { min-height: 100vh; }
-        .nav-item { transition: all 0.3s; }
-        .nav-item:hover { background: rgba(255,255,255,0.1); }
-        .nav-item.active { background: rgba(255,255,255,0.2); border-left: 4px solid #60a5fa; }
-        .file-drop-area { border: 2px dashed #cbd5e1; transition: all 0.3s; }
-        .file-drop-area.dragover { border-color: #3b82f6; background: #eff6ff; }
-        .loading-overlay { background: rgba(255,255,255,0.9); }
-        .progress-bar { transition: width 0.3s ease; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f3f4f6; }
+        .sidebar { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; min-height: 100vh; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: transform 0.2s; }
+        .card:hover { transform: translateY(-3px); }
+        .chart-container { position: relative; height: 300px; }
+        .loader { border-top-color: #3b82f6; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .drill-down-active { border: 2px solid #3b82f6; background-color: #eff6ff; }
     </style>
 </head>
-<body class="bg-gray-100">
-    <div class="flex">
-        <!-- Sidebar -->
-        <div class="sidebar gradient-bg text-white w-64 hidden md:block">
-            <div class="p-6">
-                <h1 class="text-2xl font-bold"><i class="fas fa-signal"></i> TeleMIS Pro</h1>
-                <p class="text-sm opacity-80 mt-1">File Analysis & Dashboard</p>
-            </div>
-            <nav class="mt-6">
-                <a href="#" class="nav-item active block py-3 px-6" onclick="showSection('dashboard')"><i class="fas fa-tachometer-alt mr-3"></i>Dashboard</a>
-                <a href="#" class="nav-item block py-3 px-6" onclick="showSection('upload')"><i class="fas fa-file-upload mr-3"></i>Upload File</a>
-                <a href="#" class="nav-item block py-3 px-6" onclick="showSection('analysis')"><i class="fas fa-chart-pie mr-3"></i>Analysis Results</a>
-                <a href="#" class="nav-item block py-3 px-6" onclick="showSection('reports')"><i class="fas fa-file-download mr-3"></i>Download Reports</a>
-                <a href="#" class="nav-item block py-3 px-6" onclick="showSection('settings')"><i class="fas fa-cog mr-3"></i>Settings</a>
-            </nav>
-            <div class="absolute bottom-6 left-6 right-6">
-                <div class="bg-white/10 rounded-lg p-4">
-                    <p class="text-sm">System Status</p>
-                    <p class="text-green-400 text-xs mt-1"><i class="fas fa-circle"></i> Online</p>
-                </div>
-            </div>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="sidebar w-64 hidden md:flex flex-col p-6">
+        <div class="mb-8">
+            <h1 class="text-2xl font-bold"><i class="fas fa-chart-line"></i> MIS Analyzer</h1>
+            <p class="text-xs opacity-80 mt-1">Oracle Fusion & Excel Reports</p>
         </div>
-
-        <!-- Main Content -->
-        <div class="flex-1">
-            <!-- Top Bar -->
-            <header class="bg-white shadow-sm">
-                <div class="flex justify-between items-center p-6">
-                    <div class="md:hidden">
-                        <button onclick="toggleSidebar()" class="text-gray-600"><i class="fas fa-bars text-xl"></i></button>
-                    </div>
-                    <h2 class="text-2xl font-bold text-gray-800" id="page-title">Executive Dashboard</h2>
-                    <div class="flex items-center space-x-4">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">A</div>
-                            <span class="font-medium">Admin User</span>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Content Area -->
-            <main class="p-6">
-                <!-- Loading Overlay -->
-                <div id="loadingOverlay" class="fixed inset-0 loading-overlay z-50 hidden flex items-center justify-center">
-                    <div class="text-center">
-                        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-600 border-solid mx-auto mb-4"></div>
-                        <p class="text-lg font-semibold" id="loadingText">Processing...</p>
-                        <div class="w-64 bg-gray-200 rounded-full h-2 mt-4 mx-auto">
-                            <div id="progressBar" class="progress-bar bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
-                        </div>
-                        <p class="text-sm text-gray-500 mt-2" id="progressText">0%</p>
-                    </div>
-                </div>
-
-                <!-- Dashboard Section -->
-                <div id="dashboard" class="section">
-                    <!-- KPI Cards -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <div class="card bg-white rounded-xl shadow-md p-6 border-l-4 border-red-500">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="text-gray-500 text-sm font-semibold">Total Records</p>
-                                    <h3 class="text-3xl font-bold mt-2" id="kpi-records">0</h3>
-                                    <p class="text-xs text-gray-400 mt-1">From uploaded file</p>
-                                </div>
-                                <div class="bg-red-100 p-3 rounded-full">
-                                    <i class="fas fa-database text-red-500 text-xl"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="text-gray-500 text-sm font-semibold">Columns Detected</p>
-                                    <h3 class="text-3xl font-bold mt-2" id="kpi-columns">0</h3>
-                                    <p class="text-xs text-gray-400 mt-1">Data fields</p>
-                                </div>
-                                <div class="bg-green-100 p-3 rounded-full">
-                                    <i class="fas fa-table text-green-500 text-xl"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="text-gray-500 text-sm font-semibold">Data Quality</p>
-                                    <h3 class="text-3xl font-bold mt-2" id="kpi-quality">0%</h3>
-                                    <p class="text-xs text-gray-400 mt-1">Complete records</p>
-                                </div>
-                                <div class="bg-blue-100 p-3 rounded-full">
-                                    <i class="fas fa-check-circle text-blue-500 text-xl"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card bg-white rounded-xl shadow-md p-6 border-l-4 border-purple-500">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="text-gray-500 text-sm font-semibold">File Size</p>
-                                    <h3 class="text-3xl font-bold mt-2" id="kpi-size">0 MB</h3>
-                                    <p class="text-xs text-gray-400 mt-1">Uploaded file</p>
-                                </div>
-                                <div class="bg-purple-100 p-3 rounded-full">
-                                    <i class="fas fa-file text-purple-500 text-xl"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Charts -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                        <div class="card bg-white rounded-xl shadow-md p-6">
-                            <h3 class="text-lg font-bold mb-4 flex items-center">
-                                <i class="fas fa-chart-line text-blue-600 mr-2"></i> Data Distribution
-                            </h3>
-                            <canvas id="distributionChart" height="200"></canvas>
-                        </div>
-                        <div class="card bg-white rounded-xl shadow-md p-6">
-                            <h3 class="text-lg font-bold mb-4 flex items-center">
-                                <i class="fas fa-chart-bar text-green-600 mr-2"></i> Category Analysis
-                            </h3>
-                            <canvas id="categoryChart" height="200"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Data Summary -->
-                    <div class="card bg-white rounded-xl shadow-md p-6">
-                        <h3 class="text-lg font-bold mb-4 flex items-center">
-                            <i class="fas fa-table text-purple-600 mr-2"></i> Data Summary
-                        </h3>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="p-3 text-left">Metric</th>
-                                        <th class="p-3 text-left">Value</th>
-                                        <th class="p-3 text-left">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="summaryTable"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Upload Section -->
-                <div id="upload" class="section hidden">
-                    <div class="card bg-white rounded-xl shadow-md p-8 max-w-4xl mx-auto">
-                        <h3 class="text-2xl font-bold mb-6 flex items-center">
-                            <i class="fas fa-file-upload text-blue-600 mr-3"></i> Upload Data File
-                        </h3>
-                        <p class="text-gray-600 mb-6">
-                            Supports Excel (.xlsx, .xls), CSV (.csv), and JSON files. 
-                            Large files up to 100MB are handled efficiently.
-                        </p>
-
-                        <!-- Drag & Drop Area -->
-                        <div id="dropArea" class="file-drop-area rounded-xl p-12 text-center cursor-pointer mb-6">
-                            <i class="fas fa-cloud-upload-alt text-6xl text-blue-500 mb-4"></i>
-                            <p class="text-lg font-semibold text-gray-700 mb-2">Drag & Drop your file here</p>
-                            <p class="text-gray-500 mb-4">or click to browse</p>
-                            <input type="file" id="fileInput" class="hidden" accept=".xlsx,.xls,.csv,.json" multiple>
-                            <button onclick="document.getElementById('fileInput').click()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
-                                <i class="fas fa-folder-open mr-2"></i> Browse Files
-                            </button>
-                        </div>
-
-                        <!-- Selected Files -->
-                        <div id="selectedFiles" class="hidden">
-                            <h4 class="font-semibold mb-3">Selected Files:</h4>
-                            <div id="fileList" class="space-y-2"></div>
-                        </div>
-
-                        <!-- Analysis Options -->
-                        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
-                            <h4 class="font-semibold mb-3">Analysis Options:</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <label class="flex items-center space-x-2">
-                                    <input type="checkbox" id="autoDetect" checked class="w-4 h-4">
-                                    <span>Auto-detect data types</span>
-                                </label>
-                                <label class="flex items-center space-x-2">
-                                    <input type="checkbox" id="generateCharts" checked class="w-4 h-4">
-                                    <span>Generate visualizations</span>
-                                </label>
-                                <label class="flex items-center space-x-2">
-                                    <input type="checkbox" id="cleanData" checked class="w-4 h-4">
-                                    <span>Clean and normalize data</span>
-                                </label>
-                                <label class="flex items-center space-x-2">
-                                    <input type="checkbox" id="exportSummary" checked class="w-4 h-4">
-                                    <span>Export analysis summary</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Process Button -->
-                        <button onclick="processFiles()" class="w-full bg-blue-600 text-white px-6 py-4 rounded-lg hover:bg-blue-700 font-semibold text-lg mt-6">
-                            <i class="fas fa-magic mr-2"></i> Analyze & Generate Dashboard
-                        </button>
-
-                        <!-- Supported Formats -->
-                        <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-                            <h4 class="font-semibold text-blue-800 mb-2"><i class="fas fa-info-circle mr-2"></i>Supported Formats:</h4>
-                            <ul class="text-sm text-blue-700 space-y-1">
-                                <li>• Excel (.xlsx, .xls) - up to 100MB</li>
-                                <li>• CSV (.csv) - up to 100MB</li>
-                                <li>• JSON (.json) - up to 50MB</li>
-                                <li>• Auto-detects headers and data types</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Analysis Section -->
-                <div id="analysis" class="section hidden">
-                    <div class="card bg-white rounded-xl shadow-md p-6">
-                        <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-xl font-bold">Analysis Results</h3>
-                            <button onclick="exportAnalysis()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-                                <i class="fas fa-download mr-2"></i>Export Results
-                            </button>
-                        </div>
-
-                        <!-- Data Preview -->
-                        <div class="mb-6">
-                            <h4 class="font-semibold mb-3">Data Preview (First 100 Rows)</h4>
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-sm border-collapse" id="dataPreviewTable">
-                                    <thead class="bg-gray-100" id="previewHeader"></thead>
-                                    <tbody id="previewBody"></tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- Column Analysis -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <div class="border rounded-lg p-4">
-                                <h4 class="font-semibold mb-3">Numeric Columns</h4>
-                                <div id="numericCols" class="space-y-2"></div>
-                            </div>
-                            <div class="border rounded-lg p-4">
-                                <h4 class="font-semibold mb-3">Text Columns</h4>
-                                <div id="textCols" class="space-y-2"></div>
-                            </div>
-                            <div class="border rounded-lg p-4">
-                                <h4 class="font-semibold mb-3">Date Columns</h4>
-                                <div id="dateCols" class="space-y-2"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Reports Section -->
-                <div id="reports" class="section hidden">
-                    <div class="card bg-white rounded-xl shadow-md p-6">
-                        <h3 class="text-xl font-bold mb-6">Download Analysis Reports</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <button onclick="downloadReport('summary')" class="p-6 border rounded-lg hover:bg-blue-50 text-left">
-                                <i class="fas fa-file-pdf text-red-600 text-2xl mb-2"></i>
-                                <h4 class="font-semibold">Summary Report</h4>
-                                <p class="text-sm text-gray-500">Key metrics & insights</p>
-                            </button>
-                            <button onclick="downloadReport('data')" class="p-6 border rounded-lg hover:bg-green-50 text-left">
-                                <i class="fas fa-file-excel text-green-600 text-2xl mb-2"></i>
-                                <h4 class="font-semibold">Cleaned Data</h4>
-                                <p class="text-sm text-gray-500">Processed Excel file</p>
-                            </button>
-                            <button onclick="downloadReport('charts')" class="p-6 border rounded-lg hover:bg-purple-50 text-left">
-                                <i class="fas fa-image text-purple-600 text-2xl mb-2"></i>
-                                <h4 class="font-semibold">Charts Package</h4>
-                                <p class="text-sm text-gray-500">All visualizations</p>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Settings Section -->
-                <div id="settings" class="section hidden">
-                    <div class="card bg-white rounded-xl shadow-md p-6">
-                        <h3 class="text-xl font-bold mb-6">System Settings</h3>
-                        <div class="space-y-4">
-                            <div class="flex justify-between items-center p-4 bg-gray-50 rounded">
-                                <span>Auto-refresh Dashboard</span>
-                                <input type="checkbox" checked class="w-5 h-5">
-                            </div>
-                            <div class="flex justify-between items-center p-4 bg-gray-50 rounded">
-                                <span>Enable Large File Mode (100MB+)</span>
-                                <input type="checkbox" class="w-5 h-5">
-                            </div>
-                            <div class="flex justify-between items-center p-4 bg-gray-50 rounded">
-                                <span>Dark Mode</span>
-                                <input type="checkbox" class="w-5 h-5">
-                            </div>
-                            <div class="flex justify-between items-center p-4 bg-gray-50 rounded">
-                                <span>Export Format</span>
-                                <select class="border rounded px-3 py-2">
-                                    <option>Excel (.xlsx)</option>
-                                    <option>CSV (.csv)</option>
-                                    <option>PDF (.pdf)</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
+        <nav class="flex-1 space-y-2">
+            <button onclick="nav('upload')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10 active-nav"><i class="fas fa-upload mr-3"></i>Upload Report</button>
+            <button onclick="nav('dashboard')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10"><i class="fas fa-tachometer-alt mr-3"></i>Dashboard</button>
+            <button onclick="nav('data')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10"><i class="fas fa-table mr-3"></i>Data View</button>
+            <button onclick="nav('export')" class="nav-btn w-full text-left p-3 rounded hover:bg-white/10"><i class="fas fa-download mr-3"></i>Export Insights</button>
+        </nav>
+        <div class="mt-auto p-4 bg-white/10 rounded-lg text-xs">
+            <p>Memory Usage: <span id="memUsage">0 MB</span></p>
+            <p class="text-green-400 mt-1"><i class="fas fa-circle text-[8px]"></i> Ready</p>
         </div>
-    </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col overflow-hidden">
+        <!-- Header -->
+        <header class="bg-white shadow-sm p-4 flex justify-between items-center z-10">
+            <h2 id="pageTitle" class="text-xl font-bold text-gray-800">Upload Oracle Report</h2>
+            <button onclick="resetApp()" class="text-red-500 hover:text-red-700 text-sm"><i class="fas fa-trash-alt mr-1"></i> Reset</button>
+        </header>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto p-6 relative">
+            
+            <!-- Loading Overlay -->
+            <div id="loader" class="hidden absolute inset-0 bg-white/90 z-50 flex flex-col items-center justify-center">
+                <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4"></div>
+                <p class="text-lg font-semibold text-gray-700" id="loadingText">Processing Oracle Data...</p>
+                <p class="text-sm text-gray-500" id="loadingSub">Please wait, this may take a moment for large files.</p>
+            </div>
+
+            <!-- SECTION: UPLOAD -->
+            <div id="section-upload" class="section">
+                <div class="max-w-3xl mx-auto text-center mt-10">
+                    <div class="card p-10 border-2 border-dashed border-blue-300 hover:border-blue-500 transition-colors cursor-pointer" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-file-excel text-6xl text-green-600 mb-4"></i>
+                        <h3 class="text-xl font-bold text-gray-700">Upload Oracle Fusion Export</h3>
+                        <p class="text-gray-500 mt-2">Supports .xlsx, .xls, .csv (Up to 50MB)</p>
+                        <p class="text-xs text-gray-400 mt-4">We automatically detect headers and clean footers.</p>
+                        <input type="file" id="fileInput" class="hidden" accept=".xlsx,.xls,.csv">
+                    </div>
+                    <div class="mt-6 text-left bg-white p-6 rounded-lg shadow-sm">
+                        <h4 class="font-bold text-gray-700 mb-2">Supported Oracle Report Types:</h4>
+                        <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
+                            <li>General Ledger Trial Balance</li>
+                            <li>Fixed Assets Register</li>
+                            <li>Payroll & HR Reports</li>
+                            <li>Telecom CDR & Billing Reports</li>
+                            <li>Any standard Excel export with rows/columns</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: DASHBOARD -->
+            <div id="section-dashboard" class="section hidden">
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                    <div class="card p-4 border-l-4 border-blue-500">
+                        <p class="text-gray-500 text-xs uppercase">Total Rows</p>
+                        <h3 class="text-2xl font-bold" id="kpi-rows">0</h3>
+                    </div>
+                    <div class="card p-4 border-l-4 border-green-500">
+                        <p class="text-gray-500 text-xs uppercase">Total Value</p>
+                        <h3 class="text-2xl font-bold" id="kpi-total">0</h3>
+                    </div>
+                    <div class="card p-4 border-l-4 border-purple-500">
+                        <p class="text-gray-500 text-xs uppercase">Avg Per Record</p>
+                        <h3 class="text-2xl font-bold" id="kpi-avg">0</h3>
+                    </div>
+                    <div class="card p-4 border-l-4 border-orange-500">
+                        <p class="text-gray-500 text-xs uppercase">Data Quality</p>
+                        <h3 class="text-2xl font-bold" id="kpi-quality">100%</h3>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="card p-6">
+                        <h4 class="font-bold text-gray-700 mb-4">Top 10 Contributors (Click to Drill Down)</h4>
+                        <div class="chart-container">
+                            <canvas id="mainChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card p-6">
+                        <h4 class="font-bold text-gray-700 mb-4">Distribution by Category</h4>
+                        <div class="chart-container">
+                            <canvas id="distChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Drill Down Info -->
+                <div id="drillInfo" class="hidden bg-blue-50 border border-blue-200 p-4 rounded-lg mb-6 flex justify-between items-center">
+                    <div>
+                        <p class="text-sm font-bold text-blue-800">Drill-Down Active</p>
+                        <p class="text-xs text-blue-600">Showing data filtered by chart selection. <span id="filterCount">0</span> rows visible.</p>
+                    </div>
+                    <button onclick="resetFilter()" class="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">Clear Filter</button>
+                </div>
+            </div>
+
+            <!-- SECTION: DATA VIEW -->
+            <div id="section-data" class="section hidden">
+                <div class="card p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-bold text-gray-700">Raw Data View (Filtered)</h4>
+                        <div class="flex space-x-2">
+                            <input type="text" id="searchInput" placeholder="Search..." class="border rounded px-3 py-1 text-sm" onkeyup="filterTable()">
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto max-h-[60vh]">
+                        <table class="min-w-full divide-y divide-gray-200 text-sm" id="dataTable">
+                            <thead class="bg-gray-50 sticky top-0">
+                                <tr id="tableHeader"></tr>
+                            </thead>
+                            <tbody id="tableBody" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-2">Showing first 1000 rows of current view.</p>
+                </div>
+            </div>
+
+            <!-- SECTION: EXPORT -->
+            <div id="section-export" class="section hidden">
+                <div class="max-w-2xl mx-auto">
+                    <div class="card p-8 text-center">
+                        <i class="fas fa-file-export text-5xl text-blue-600 mb-4"></i>
+                        <h3 class="text-xl font-bold text-gray-800">Download Analysis</h3>
+                        <p class="text-gray-500 mb-6">Download the cleaned data, KPIs, and insights in Excel format.</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                            <button onclick="downloadExcel('cleaned')" class="p-4 border rounded-lg hover:bg-green-50 hover:border-green-500 transition">
+                                <i class="fas fa-file-excel text-green-600 mr-2"></i> Cleaned Data
+                                <p class="text-xs text-gray-500">Raw data with headers fixed</p>
+                            </button>
+                            <button onclick="downloadExcel('summary')" class="p-4 border rounded-lg hover:bg-blue-50 hover:border-blue-500 transition">
+                                <i class="fas fa-file-alt text-blue-600 mr-2"></i> Analysis Summary
+                                <p class="text-xs text-gray-500">KPIs & Charts data</p>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
 
     <script>
-        // ==================== GLOBAL STATE ====================
-        let uploadedData = [];
-        let uploadedFile = null;
-        let analysisCharts = {};
-        let columnTypes = {};
-        let numericColumns = [];
-        let textColumns = [];
-        let dateColumns = [];
+        // ================= STATE =================
+        let rawData = [];
+        let headers = [];
+        let numericColIndex = -1;
+        let categoryColIndex = -1;
+        let filteredData = [];
+        let mainChartInstance = null;
+        let distChartInstance = null;
 
-        // ==================== INITIALIZATION ====================
-        function init() {
-            setupNavigation();
-            setupFileUpload();
-            loadDashboardCharts();
-        }
-
-        // ==================== NAVIGATION ====================
-        function setupNavigation() {
-            const navItems = document.querySelectorAll('.nav-item');
-            navItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    navItems.forEach(n => n.classList.remove('active'));
-                    this.classList.add('active');
-                });
-            });
-        }
-
-        function showSection(sectionId) {
-            document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
-            document.getElementById(sectionId).classList.remove('hidden');
-            const titles = {
-                dashboard: 'Executive Dashboard',
-                upload: 'Upload & Analyze',
-                analysis: 'Analysis Results',
-                reports: 'Download Reports',
-                settings: 'System Settings'
-            };
-            document.getElementById('page-title').innerText = titles[sectionId];
-        }
-
-        function toggleSidebar() {
-            document.querySelector('.sidebar').classList.toggle('hidden');
-            document.querySelector('.sidebar').classList.toggle('absolute');
-            document.querySelector('.sidebar').classList.toggle('z-50');
-        }
-
-        // ==================== FILE UPLOAD ====================
-        function setupFileUpload() {
-            const dropArea = document.getElementById('dropArea');
-            const fileInput = document.getElementById('fileInput');
-
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                dropArea.addEventListener(eventName, preventDefaults, false);
-            });
-
-            function preventDefaults(e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropArea.addEventListener(eventName, () => dropArea.classList.add('dragover'), false);
-            });
-
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropArea.addEventListener(eventName, () => dropArea.classList.remove('dragover'), false);
-            });
-
-            dropArea.addEventListener('drop', handleDrop, false);
-            fileInput.addEventListener('change', handleFiles, false);
-        }
-
-        function handleDrop(e) {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            handleFiles({ target: { files: files } });
-        }
-
-        function handleFiles(e) {
-            const files = e.target.files;
-            const fileList = document.getElementById('fileList');
-            const selectedFilesDiv = document.getElementById('selectedFiles');
+        // ================= NAVIGATION =================
+        function nav(section) {
+            document.querySelectorAll('.section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('section-' + section).classList.remove('hidden');
             
-            fileList.innerHTML = '';
-            selectedFilesDiv.classList.remove('hidden');
+            // Update Active Nav
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('bg-white/20', 'border-l-4', 'border-white'));
+            event.currentTarget.classList.add('bg-white/20', 'border-l-4', 'border-white');
 
-            Array.from(files).forEach(file => {
-                const fileSize = (file.size / 1024 / 1024).toFixed(2);
-                const fileItem = document.createElement('div');
-                fileItem.className = 'flex justify-between items-center p-3 bg-gray-50 rounded';
-                fileItem.innerHTML = `
-                    <div class="flex items-center space-x-3">
-                        <i class="fas fa-file text-blue-600"></i>
-                        <div>
-                            <p class="font-medium">${file.name}</p>
-                            <p class="text-xs text-gray-500">${fileSize} MB</p>
-                        </div>
-                    </div>
-                    <button onclick="removeFile('${file.name}')" class="text-red-500 hover:text-red-700">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                `;
-                fileList.appendChild(fileItem);
-            });
+            const titles = { upload: 'Upload Report', dashboard: 'Dashboard', data: 'Data View', export: 'Export Insights' };
+            document.getElementById('pageTitle').innerText = titles[section];
+        }
 
-            if (files.length > 0) {
-                uploadedFile = files[0];
+        function resetApp() {
+            if(confirm("Reset all data?")) {
+                location.reload();
             }
         }
 
-        function removeFile(fileName) {
-            const fileList = document.getElementById('fileList');
-            const items = fileList.children;
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].innerText.includes(fileName)) {
-                    items[i].remove();
+        // ================= FILE HANDLING =================
+        document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Memory Check
+            if (file.size > 50 * 1024 * 1024) {
+                alert("File is too large (>50MB). Please try to filter your Oracle report before uploading.");
+                return;
+            }
+
+            showLoader(true, "Reading File...");
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
+                processOracleData(json);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // ================= ORACLE DATA CLEANING =================
+        function processOracleData(rows) {
+            // Oracle reports often have headers at top and footers at bottom
+            // Heuristic: Find the first row with > 50% non-empty cells (Assumed Header)
+            let headerRowIndex = -1;
+            let dataStartIndex = -1;
+
+            for (let i = 0; i < rows.length; i++) {
+                const nonEmpty = rows[i].filter(cell => cell !== "" && cell !== null).length;
+                if (nonEmpty > rows[i].length * 0.5) {
+                    headerRowIndex = i;
                     break;
                 }
             }
-            if (fileList.children.length === 0) {
-                document.getElementById('selectedFiles').classList.add('hidden');
-                uploadedFile = null;
-            }
-        }
 
-        // ==================== FILE PROCESSING ====================
-        async function processFiles() {
-            if (!uploadedFile) {
-                alert('Please select a file first!');
+            if (headerRowIndex === -1) {
+                showLoader(false);
+                alert("Could not detect headers. Please ensure the file has column names.");
                 return;
             }
 
-            showLoading(true, 'Reading file...');
+            headers = rows[headerRowIndex].map(h => String(h).trim());
+            dataStartIndex = headerRowIndex + 1;
             
-            try {
-                const fileExtension = uploadedFile.name.split('.').pop().toLowerCase();
-                let data;
-
-                if (fileExtension === 'xlsx' || fileExtension === 'xls') {
-                    data = await readExcelFile(uploadedFile);
-                } else if (fileExtension === 'csv') {
-                    data = await readCSVFile(uploadedFile);
-                } else if (fileExtension === 'json') {
-                    data = await readJSONFile(uploadedFile);
-                } else {
-                    throw new Error('Unsupported file format');
+            // Extract Data
+            rawData = rows.slice(dataStartIndex).filter(row => row.length > 0 && row.some(cell => cell !== ""));
+            
+            // Detect Numeric Column (Look for "Amount", "Value", "Cost", "Price")
+            let bestScore = 0;
+            headers.forEach((h, idx) => {
+                const lower = h.toLowerCase();
+                if (lower.includes('amount') || lower.includes('cost') || lower.includes('value') || lower.includes('price') || lower.includes('revenue')) {
+                    numericColIndex = idx;
+                    bestScore = 10;
+                } else if (bestScore < 5 && !isNaN(parseFloat(rows[dataStartIndex][idx]))) {
+                    numericColIndex = idx;
+                    bestScore = 5;
                 }
+            });
 
-                showLoading(true, 'Analyzing data...');
-                await analyzeData(data);
+            // Detect Category Column (Look for "ID", "Name", "Account", "Dept")
+            headers.forEach((h, idx) => {
+                const lower = h.toLowerCase();
+                if (lower.includes('name') || lower.includes('id') || lower.includes('account') || lower.includes('dept') || lower.includes('region')) {
+                    categoryColIndex = idx;
+                }
+            });
 
-                showLoading(false);
-                updateDashboard();
-                showSection('analysis');
-            } catch (error) {
-                showLoading(false);
-                alert('Error processing file: ' + error.message);
+            // Default fallbacks
+            if (numericColIndex === -1 && headers.length > 1) numericColIndex = headers.length - 1;
+            if (categoryColIndex === -1 && headers.length > 1) categoryColIndex = 0;
+
+            filteredData = [...rawData];
+            updateMemory();
+            showLoader(false);
+            initDashboard();
+            nav('dashboard');
+        }
+
+        // ================= DASHBOARD LOGIC =================
+        function initDashboard() {
+            // KPIs
+            document.getElementById('kpi-rows').innerText = rawData.length.toLocaleString();
+            
+            // Calculate Total & Avg
+            let total = 0;
+            rawData.forEach(row => {
+                const val = parseFloat(row[numericColIndex]);
+                if (!isNaN(val)) total += val;
+            });
+            document.getElementById('kpi-total').innerText = total.toLocaleString(undefined, { maximumFractionDigits: 0 });
+            document.getElementById('kpi-avg').innerText = (total / rawData.length).toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+            // Data Quality (Simple check for empty numeric cells)
+            const emptyCount = rawData.filter(r => isNaN(parseFloat(r[numericColIndex]))).length;
+            const quality = Math.round(((rawData.length - emptyCount) / rawData.length) * 100);
+            document.getElementById('kpi-quality').innerText = quality + '%';
+
+            // Prepare Aggregated Data for Charts
+            const aggregation = {};
+            rawData.forEach(row => {
+                const cat = row[categoryColIndex] || "Unknown";
+                const val = parseFloat(row[numericColIndex]) || 0;
+                if (aggregation[cat]) {
+                    aggregation[cat] += val;
+                } else {
+                    aggregation[cat] = val;
+                }
+            });
+
+            // Sort and take Top 10
+            const sorted = Object.entries(aggregation).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            const labels = sorted.map(i => i[0]);
+            const data = sorted.map(i => i[1]);
+
+            // Render Main Chart
+            const ctx1 = document.getElementById('mainChart').getContext('2d');
+            if (mainChartInstance) mainChartInstance.destroy();
+            mainChartInstance = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Value',
+                        data: data,
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const category = labels[index];
+                            applyDrillDown(category);
+                        }
+                    }
+                }
+            });
+
+            // Render Distribution Chart (Top 5 vs Others)
+            const ctx2 = document.getElementById('distChart').getContext('2d');
+            if (distChartInstance) distChartInstance.destroy();
+            
+            const top5 = sorted.slice(0, 5);
+            const rest = sorted.slice(5).reduce((a, b) => a + b[1], 0);
+            
+            distChartInstance = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: [...top5.map(i => i[0]), 'Others'],
+                    datasets: [{
+                        data: [...top5.map(i => i[1]), rest],
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#9ca3af']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        // ================= DRILL DOWN =================
+        function applyDrillDown(category) {
+            filteredData = rawData.filter(row => row[categoryColIndex] === category);
+            
+            // Update UI
+            document.getElementById('drillInfo').classList.remove('hidden');
+            document.getElementById('filterCount').innerText = filteredData.length;
+            
+            // Re-render charts with filtered data
+            initDashboard();
+            
+            // Switch to Data View to show details
+            renderTable();
+            nav('data');
+        }
+
+        function resetFilter() {
+            filteredData = [...rawData];
+            document.getElementById('drillInfo').classList.add('hidden');
+            initDashboard();
+        }
+
+        // ================= TABLE RENDER =================
+        function renderTable() {
+            const thead = document.getElementById('tableHeader');
+            const tbody = document.getElementById('tableBody');
+            
+            thead.innerHTML = headers.map(h => `<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${h}</th>`).join('');
+            
+            // Limit to 1000 for performance
+            const displayData = filteredData.slice(0, 1000);
+            
+            tbody.innerHTML = displayData.map(row => {
+                return `<tr>${row.map(cell => `<td class="px-6 py-4 whitespace-nowrap text-gray-700">${cell || ''}</td>`).join('')}</tr>`;
+            }).join('');
+        }
+
+        function filterTable() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const displayData = filteredData.filter(row => 
+                row.some(cell => String(cell).toLowerCase().includes(term))
+            ).slice(0, 1000);
+            
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = displayData.map(row => {
+                return `<tr>${row.map(cell => `<td class="px-6 py-4 whitespace-nowrap text-gray-700">${cell || ''}</td>`).join('')}</tr>`;
+            }).join('');
+        }
+
+        // ================= EXPORT =================
+        function downloadExcel(type) {
+            if (rawData.length === 0) return alert("No data to export");
+
+            if (type === 'cleaned') {
+                const ws = XLSX.utils.aoa_to_sheet([headers, ...filteredData]);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Cleaned Data");
+                XLSX.writeFile(wb, "MIS_Analysis_Cleaned.xlsx");
+            } else if (type === 'summary') {
+                // Create a summary sheet
+                const summaryData = [
+                    ["Metric", "Value"],
+                    ["Total Rows", rawData.length],
+                    ["Total Value", document.getElementById('kpi-total').innerText],
+                    ["Data Quality", document.getElementById('kpi-quality').innerText],
+                    ["Export Date", new Date().toLocaleString()]
+                ];
+                const ws = XLSX.utils.aoa_to_sheet(summaryData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Summary");
+                XLSX.writeFile(wb, "MIS_Analysis_Summary.xlsx");
             }
         }
 
-        function showLoading(show, text = 'Processing...') {
-            document.getElementById('loadingOverlay').classList.toggle('hidden', !show);
+        // ================= UTILS =================
+        function showLoader(show, text) {
+            document.getElementById('loader').classList.toggle('hidden', !show);
             document.getElementById('loadingText').innerText = text;
         }
 
-        function updateProgress(percent, text) {
-            document.getElementById('progressBar').style.width = percent + '%';
-            document.getElementById('progressText').innerText = text || percent + '%';
+        function updateMemory() {
+            // Approximate memory usage calculation
+            const size = JSON.stringify(rawData).length;
+            document.getElementById('memUsage').innerText = (size / 1024 / 1024).toFixed(2) + " MB";
         }
 
-        // ==================== FILE READERS ====================
-        function readExcelFile(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const data = new Uint8Array(e.target.result);
-                        const workbook = XLSX.read(data, { type: 'array' });
-                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-                        resolve(jsonData);
-                    } catch (error) {
-                        reject(error);
-                    }
-                };
-                reader.onerror = reject;
-                reader.readAsArrayBuffer(file);
-            });
-        }
+        // Initialize
+        window.addEventListener('load', () => {
+            // Set default nav active
+            document.querySelector('.nav-btn').classList.add('bg-white/20', 'border-l-4', 'border-white');
+        });
 
-        function readCSVFile(file) {
-            return new Promise((resolve, reject) => {
-                Papa.parse(file, {
-                    header: false,
-                    dynamicTyping: true,
-                    skipEmptyLines: true,
-                    complete: (results) => {
-                        resolve(results.data);
-                    },
-                    error: reject
-                });
-            });
-        }
-
-        function readJSONFile(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const data = JSON.parse(e.target.result);
-                        resolve(Array.isArray(data) ? data : [data]);
-                    } catch (error) {
-                        reject(error);
-                    }
-                };
-                reader.onerror = reject;
-                reader.readAsText(file);
-            });
-        }
-
-        // ==================== DATA ANALYSIS ====================
-        async function analyzeData(rawData) {
-            // Convert to objects if array of arrays
-            if (rawData.length > 0 && Array.isArray(rawData[0])) {
-                const headers = rawData[0];
-                uploadedData = rawData.slice(1).map(row => {
-                    const obj = {};
-                    headers.forEach((header, index) => {
-                        obj[header] = row[index];
-                    });
-                    return obj;
-                });
-            } else {
-                uploadedData = rawData;
-            }
-
-            // Detect column types
-            detectColumnTypes();
-
-            // Update KPIs
-            document.getElementById('kpi-records').innerText = uploadedData.length.toLocaleString();
-            document.getElementById('kpi-columns').innerText = Object.keys(uploadedData[0] || {}).length;
-            
-            // Calculate data quality
-            const totalCells = uploadedData.length * Object.keys(uploadedData[0] || {}).length;
-            const emptyCells = uploadedData.reduce((acc, row) => {
-                return acc + Object.values(row).filter(v => v === null || v === undefined || v === '').length;
-            }, 0);
-            const quality = Math.round(((totalCells - emptyCells) / totalCells) * 100);
-            document.getElementById('kpi-quality').innerText = quality + '%';
-            
-            // File size
-            const fileSizeMB = (uploadedFile.size / 1024 / 1024).toFixed(2);
-            document.getElementById('kpi-size').innerText = fileSizeMB + ' MB';
-
-            // Update Analysis Section
-            updateAnalysisSection();
-            updateSummaryTable();
-        }
-
-        function detectColumnTypes() {
-            if (uploadedData.length === 0) return;
-
-            const sampleSize = Math.min(uploadedData.length, 100);
-            const keys = Object.keys(uploadedData[0]);
-            columnTypes = {};
-
-            keys.forEach(key => {
-                let numeric = 0;
-                let date = 0;
-                let text = 0;
-
-                for (let i = 0; i < sampleSize; i++) {
-                    const value = uploadedData[i][key];
-                    if (value === null || value === undefined || value === '') continue;
-                    
-                    if (!isNaN(parseFloat(value)) && isFinite(value)) {
-                        numeric++;
-                    } else if (isValidDate(value)) {
-                        date++;
-                    } else {
-                        text++;
-                    }
-                }
-
-                if (numeric > sampleSize * 0.7) {
-                    columnTypes[key] = 'numeric';
-                    numericColumns.push(key);
-                } else if (date > sampleSize * 0.7) {
-                    columnTypes[key] = 'date';
-                    dateColumns.push(key);
-                } else {
-                    columnTypes[key] = 'text';
-                    textColumns.push(key);
-                }
-            });
-        }
-
-        function isValidDate(value) {
-            const datePatterns = [
-                /^\d{4}-\d{2}-\d{2}$/,
-                /^\d{2}\/\d{2}\/\d{4}$/,
-                /^\d{2}-\d{2}-\d{4}$/
-            ];
-            return datePatterns.some(pattern => pattern.test(value));
-        }
-
-        // ==================== DASHBOARD UPDATES ====================
-        function updateDashboard() {
-            // Update charts
-            loadDashboardCharts();
-        }
-
-        function loadDashboardCharts() {
-            // Distribution Chart
-            if (analysisCharts.distribution) analysisCharts.distribution.destroy();
-            analysisCharts.distribution = new Chart(document.getElementById('distributionChart'), {
-                type: 'bar',
-                data: {
-                    labels: numericColumns.slice(0, 5),
-                    datasets: [{
-                        label: 'Numeric Columns',
-                        data: numericColumns.slice(0, 5).map(col => {
-                            const values = uploadedData.map(row => parseFloat(row[col]) || 0);
-                            return values.reduce((a, b) => a + b, 0) / values.length;
-                        }),
-                        backgroundColor: '#3b82f6'
-                    }]
-                },
-                options: { responsive: true }
-            });
-
-            // Category Chart
-            if (analysisCharts.category) analysisCharts.category.destroy();
-            analysisCharts.category = new Chart(document.getElementById('categoryChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Numeric', 'Text', 'Date'],
-                    datasets: [{
-                        data: [numericColumns.length, textColumns.length, dateColumns.length],
-                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b']
-                    }]
-                },
-                options: { responsive: true }
-            });
-        }
-
-        function updateAnalysisSection() {
-            // Preview Table
-            const previewHeader = document.getElementById('previewHeader');
-            const previewBody = document.getElementById('previewBody');
-            
-            const headers = Object.keys(uploadedData[0] || {});
-            previewHeader.innerHTML = '<tr>' + headers.map(h => `<th class="p-3 text-left border">${h}</th>`).join('') + '</tr>';
-            
-            previewBody.innerHTML = uploadedData.slice(0, 100).map(row => {
-                return '<tr>' + headers.map(h => `<td class="p-3 border">${row[h] || ''}</td>`).join('') + '</tr>';
-            }).join('');
-
-            // Column Lists
-            document.getElementById('numericCols').innerHTML = numericColumns.map(col => 
-                `<div class="p-2 bg-blue-50 rounded text-sm">${col}</div>`
-            ).join('');
-            
-            document.getElementById('textCols').innerHTML = textColumns.map(col => 
-                `<div class="p-2 bg-green-50 rounded text-sm">${col}</div>`
-            ).join('');
-            
-            document.getElementById('dateCols').innerHTML = dateColumns.map(col => 
-                `<div class="p-2 bg-yellow-50 rounded text-sm">${col}</div>`
-            ).join('');
-        }
-
-        function updateSummaryTable() {
-            const tbody = document.getElementById('summaryTable');
-            const summary = [
-                { metric: 'Total Records', value: uploadedData.length.toLocaleString(), status: 'OK' },
-                { metric: 'Columns', value: Object.keys(uploadedData[0] || {}).length, status: 'OK' },
-                { metric: 'Numeric Fields', value: numericColumns.length, status: 'OK' },
-                { metric: 'Text Fields', value: textColumns.length, status: 'OK' },
-                { metric: 'Date Fields', value: dateColumns.length, status: 'OK' },
-                { metric: 'File Size', value: (uploadedFile.size / 1024 / 1024).toFixed(2) + ' MB', status: 'OK' }
-            ];
-
-            tbody.innerHTML = summary.map(s => `
-                <tr class="border-b">
-                    <td class="p-3 font-medium">${s.metric}</td>
-                    <td class="p-3">${s.value}</td>
-                    <td class="p-3"><span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">${s.status}</span></td>
-                </tr>
-            `).join('');
-        }
-
-        // ==================== EXPORT FUNCTIONS ====================
-        function exportAnalysis() {
-            const summary = {
-                timestamp: new Date().toISOString(),
-                totalRecords: uploadedData.length,
-                columns: Object.keys(uploadedData[0] || {}),
-                numericColumns: numericColumns,
-                textColumns: textColumns,
-                dateColumns: dateColumns
-            };
-
-            const blob = new Blob([JSON.stringify(summary, null, 2)], { type: 'application/json' });
-            saveAs(blob, 'analysis_summary.json');
-        }
-
-        function downloadReport(type) {
-            if (uploadedData.length === 0) {
-                alert('No data to export. Please upload a file first.');
-                return;
-            }
-
-            if (type === 'summary') {
-                const summary = {
-                    timestamp: new Date().toISOString(),
-                    totalRecords: uploadedData.length,
-                    columns: Object.keys(uploadedData[0] || {}),
-                    numericColumns: numericColumns,
-                    textColumns: textColumns,
-                    dateColumns: dateColumns,
-                    dataQuality: document.getElementById('kpi-quality').innerText
-                };
-                const blob = new Blob([JSON.stringify(summary, null, 2)], { type: 'application/json' });
-                saveAs(blob, 'telecom_analysis_summary.json');
-            } else if (type === 'data') {
-                const ws = XLSX.utils.json_to_sheet(uploadedData);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, 'Cleaned Data');
-                XLSX.writeFile(wb, 'telecom_cleaned_data.xlsx');
-            } else if (type === 'charts') {
-                const charts = {
-                    timestamp: new Date().toISOString(),
-                    charts: Object.keys(analysisCharts)
-                };
-                const blob = new Blob([JSON.stringify(charts, null, 2)], { type: 'application/json' });
-                saveAs(blob, 'charts_metadata.json');
-            }
-        }
-
-        // Initialize App
-        window.addEventListener('load', init);
     </script>
 </body>
 </html>
