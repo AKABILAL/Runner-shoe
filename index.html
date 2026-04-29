@@ -5,1284 +5,146 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Universal MIS Analytics | Oracle Fusion</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f3f4f6; }
-        .sidebar { background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%); color: white; min-height: 100vh; }
-        .nav-btn { transition: all 0.2s; }
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #f3f4f6; 
+            margin: 0;
+            padding: 0;
+        }
+        .sidebar { 
+            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%); 
+            color: white; 
+            min-height: 100vh; 
+            width: 260px;
+            flex-shrink: 0;
+        }
+        .nav-btn { 
+            transition: all 0.2s; 
+            cursor: pointer;
+        }
         .nav-btn:hover { background: rgba(255,255,255,0.1); }
-        .nav-btn.active-nav { background: rgba(255,255,255,0.2); border-left: 4px solid #60a5fa; font-weight: 600; }
-        .card { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 0.3s; }
-        .card:hover { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .chart-container { position: relative; height: 300px; width: 100%; }
-        .loader { border-top-color: #3b82f6; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
-        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .nav-btn.active-nav { 
+            background: rgba(255,255,255,0.2); 
+            border-left: 4px solid #60a5fa; 
+            font-weight: 600; 
+        }
+        .card { 
+            background: white; 
+            border-radius: 12px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
+            transition: all 0.3s; 
+        }
+        .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+        .chart-container { 
+            position: relative; 
+            height: 350px; 
+            width: 100%; 
+        }
+        .chart-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .loader { 
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
         .section { display: none; }
         .section.active { display: block; }
-        table { border-collapse: collapse; }
-        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-        th { background-color: #f9fafb; font-weight: 600; }
-        .debug-panel { background: #fef3c7; border: 2px solid #f59e0b; padding: 15px; margin: 10px; border-radius: 5px; font-size: 12px; }
-        .alert-box { background: #fee2e2; border: 2px solid #ef4444; padding: 15px; margin: 10px; border-radius: 5px; }
-        .success-box { background: #d1fae5; border: 2px solid #10b981; padding: 15px; margin: 10px; border-radius: 5px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { 
+            padding: 12px; 
+            text-align: left; 
+            border-bottom: 1px solid #e5e7eb; 
+            font-size: 13px;
+        }
+        th { 
+            background-color: #f9fafb; 
+            font-weight: 600; 
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        tr:hover td { background-color: #f3f4f6; }
+        .debug-panel { 
+            background: #fef3c7; 
+            border: 2px solid #f59e0b; 
+            padding: 15px; 
+            margin: 10px; 
+            border-radius: 8px; 
+            font-size: 12px; 
+        }
+        .alert-box { 
+            background: #fee2e2; 
+            border: 2px solid #ef4444; 
+            padding: 15px; 
+            margin: 10px; 
+            border-radius: 8px; 
+        }
+        .success-box { 
+            background: #d1fae5; 
+            border: 2px solid #10b981; 
+            padding: 15px; 
+            margin: 10px; 
+            border-radius: 8px; 
+        }
+        .kpi-card {
+            transition: transform 0.2s;
+        }
+        .kpi-card:hover {
+            transform: translateY(-2px);
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden text-gray-800">
     <!-- Sidebar -->
-    <aside class="sidebar w-64 hidden md:flex flex-col shadow-xl z-20">
+    <aside class="sidebar hidden md:flex flex-col shadow-xl z-20">
         <div class="p-6 border-b border-blue-800">
-            <h1 class="text-2xl font-bold tracking-tight"><i class="fas fa-chart-line mr-2"></i>Universal MIS</h1>
-            <p class="text-xs text-blue-200 mt-1">Works with ANY Data</p>
+            <h1 class="text-2xl font-bold tracking-tight">
+                <i class="fas fa-chart-line mr-2"></i>Universal MIS
+            </h1>
+            <p class="text-xs text-blue-200 mt-1">Intelligent Analytics Engine</p>
         </div>
         <nav class="flex-1 overflow-y-auto py-4 space-y-1">
-            <button onclick="nav('upload')" class="nav-btn w-full text-left px-6 py-3 active-nav" id="nav-upload"><i class="fas fa-upload w-6"></i> Upload Data</button>
-            <button onclick="nav('dashboard')" class="nav-btn w-full text-left px-6 py-3" id="nav-dashboard"><i class="fas fa-tachometer-alt w-6"></i> Dashboard</button>
-            <button onclick="nav('analysis')" class="nav-btn w-full text-left px-6 py-3" id="nav-analysis"><i class="fas fa-calculator w-6"></i> Ratio Analysis</button>
-            <button onclick="nav('correlation')" class="nav-btn w-full text-left px-6 py-3" id="nav-correlation"><i class="fas fa-project-diagram w-6"></i> Correlation</button>
-            <button onclick="nav('trends')" class="nav-btn w-full text-left px-6 py-3" id="nav-trends"><i class="fas fa-chart-line w-6"></i> Trend Analysis</button>
-            <button onclick="nav('data')" class="nav-btn w-full text-left px-6 py-3" id="nav-data"><i class="fas fa-table w-6"></i> Data View</button>
-            <button onclick="nav('export')" class="nav-btn w-full text-left px-6 py-3" id="nav-export"><i class="fas fa-file-export w-6"></i> Export Reports</button>
+            <button onclick="navigateTo('upload')" class="nav-btn w-full text-left px-6 py-3 active-nav" id="nav-upload">
+                <i class="fas fa-upload w-6"></i> Upload Data
+            </button>
+            <button onclick="navigateTo('dashboard')" class="nav-btn w-full text-left px-6 py-3" id="nav-dashboard">
+                <i class="fas fa-tachometer-alt w-6"></i> Dashboard
+            </button>
+            <button onclick="navigateTo('analysis')" class="nav-btn w-full text-left px-6 py-3" id="nav-analysis">
+                <i class="fas fa-calculator w-6"></i> Ratio Analysis
+            </button>
+            <button onclick="navigateTo('correlation')" class="nav-btn w-full text-left px-6 py-3" id="nav-correlation">
+                <i class="fas fa-project-diagram w-6"></i> Correlation
+            </button>
+            <button onclick="navigateTo('trends')" class="nav-btn w-full text-left px-6 py-3" id="nav-trends">
+                <i class="fas fa-chart-line w-6"></i> Trend Analysis
+            </button>
+            <button onclick="navigateTo('data')" class="nav-btn w-full text-left px-6 py-3" id="nav-data">
+                <i class="fas fa-table w-6"></i> Data View
+            </button>
+            <button onclick="navigateTo('export')" class="nav-btn w-full text-left px-6 py-3" id="nav-export">
+                <i class="fas fa-file-export w-6"></i> Export Reports
+            </button>
         </nav>
         <div class="p-4 bg-blue-900/50 text-xs border-t border-blue-800">
-            <p class="text-blue-200">System Status: <span class="text-green-400 font-bold">Online</span></p>
-            <p class="text-blue-300 mt-1">Records: <span id="recordCount">0</span></p>
-            <p class="text-blue-300 mt-1">Columns: <span id="columnCount">0</span></p>
-        </div>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
-        <!-- Header -->
-        <header class="bg-white shadow-sm p-4 flex justify-between items-center z-10">
-            <div class="flex items-center">
-                <h2 id="pageTitle" class="text-xl font-bold text-gray-800">Upload Data</h2>
-            </div>
-            <div class="flex space-x-3">
-                <button onclick="toggleFilters()" class="bg-indigo-600 text-white px-4 py-2 rounded shadow hover:bg-indigo-700 text-sm transition">
-                    <i class="fas fa-filter mr-2"></i>Filters
-                </button>
-                <button onclick="forceRenderCharts()" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 text-sm transition">
-                    <i class="fas fa-sync mr-2"></i>Force Charts
-                </button>
-                <button onclick="resetApp()" class="bg-white border border-gray-300 text-gray-600 px-4 py-2 rounded shadow-sm hover:bg-gray-50 text-sm transition">
-                    <i class="fas fa-trash-alt mr-2"></i>Reset
-                </button>
-            </div>
-        </header>
-
-        <!-- Advanced Filters Panel -->
-        <div id="filtersPanel" class="hidden bg-gray-50 border-b border-gray-200 p-4 transition-all duration-300">
-            <div class="flex justify-between items-center mb-3">
-                <h3 class="font-bold text-gray-700"><i class="fas fa-sliders-h mr-2"></i>Filters</h3>
-                <button onclick="toggleFilters()" class="text-gray-500 hover:text-gray-700"><i class="fas fa-chevron-up"></i></button>
-            </div>
-            <div id="filterControls" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4"></div>
-            <div class="flex justify-between items-center bg-white p-3 rounded border">
-                <span class="text-sm text-gray-600">Showing <span id="filterCount" class="font-bold">0</span> records</span>
-                <div class="space-x-2">
-                    <button onclick="clearFilters()" class="text-sm text-red-600 hover:underline">Clear All</button>
-                    <button onclick="applyFilters()" class="bg-indigo-600 text-white px-4 py-1.5 rounded text-sm hover:bg-indigo-700">Apply</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Scrollable Content Area -->
-        <div class="flex-1 overflow-y-auto p-6 relative bg-gray-50">
-            <!-- Loader Overlay -->
-            <div id="loader" class="hidden absolute inset-0 bg-white/90 z-50 flex flex-col items-center justify-center">
-                <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-16 w-16 mb-4"></div>
-                <p class="text-lg font-bold text-gray-700" id="loadingText">Processing...</p>
-                <p class="text-sm text-gray-500" id="loadingSub">Please wait</p>
-            </div>
-
-            <!-- Debug Panel -->
-            <div id="debugPanel" class="hidden mb-6">
-                <div class="debug-panel">
-                    <h4 class="font-bold mb-2">🔍 Column Detection Status</h4>
-                    <p><strong>Category:</strong> <span id="debugCategory">Not Set</span> (Idx: <span id="debugCategoryIdx">-</span>)</p>
-                    <p><strong>Value:</strong> <span id="debugValue">Not Set</span> (Idx: <span id="debugValueIdx">-</span>)</p>
-                    <p><strong>Date:</strong> <span id="debugDate">Not Set</span> (Idx: <span id="debugDateIdx">-</span>)</p>
-                    <p><strong>Text Columns:</strong> <span id="debugText">0</span> | <strong>Numeric Columns:</strong> <span id="debugNumeric">0</span></p>
-                    <p><strong>Total Records:</strong> <span id="debugRecords">0</span> | <strong>Filtered:</strong> <span id="debugFiltered">0</span></p>
-                    <p><strong>Charts Status:</strong> <span id="debugCharts">Not Created</span></p>
-                </div>
-            </div>
-
-            <!-- Alert Box -->
-            <div id="alertBox" class="hidden mb-6">
-                <div id="alertContent" class="alert-box">
-                    <p id="alertMessage" class="font-bold"></p>
-                </div>
-            </div>
-
-            <!-- Success Box -->
-            <div id="successBox" class="hidden mb-6">
-                <div class="success-box">
-                    <p id="successMessage" class="font-bold text-green-800"></p>
-                </div>
-            </div>
-
-            <!-- SECTION: UPLOAD -->
-            <div id="section-upload" class="section active">
-                <div class="max-w-5xl mx-auto mt-10">
-                    <div class="text-center mb-10">
-                        <h1 class="text-4xl font-bold text-gray-800 mb-2">Universal Data Ingestion</h1>
-                        <p class="text-gray-500">Works with Sales, Fixed Assets, Payables, Stocks, etc.</p>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div class="card p-8 border-2 border-dashed border-gray-300 hover:border-blue-500 transition cursor-pointer bg-white" onclick="document.getElementById('fileInput').click()">
-                            <div class="text-center">
-                                <i class="fas fa-cloud-upload-alt text-5xl text-blue-500 mb-4"></i>
-                                <h3 class="text-xl font-bold text-gray-700">Click to Upload</h3>
-                                <p class="text-sm text-gray-500 mt-2">Supports .xlsx, .xls, .csv</p>
-                            </div>
-                        </div>
-                        <div class="card p-8 border border-purple-200 bg-purple-50">
-                            <div class="text-center">
-                                <i class="fas fa-bolt text-5xl text-purple-500 mb-4"></i>
-                                <h3 class="text-xl font-bold text-gray-700">Test with Demo Data</h3>
-                                <p class="text-sm text-gray-500 mt-2">See how it works</p>
-                                <button onclick="loadDemoData()" class="mt-4 bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700 w-full">Load Demo Data</button>
-                            </div>
-                        </div>
-                    </div>
-                    <input type="file" id="fileInput" class="hidden" accept=".xlsx,.xls,.csv">
-                </div>
-            </div>
-
-            <!-- SECTION: DASHBOARD -->
-            <div id="section-dashboard" class="section">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                    <div class="card p-6 border-l-4 border-blue-500">
-                        <p class="text-xs text-gray-500 uppercase font-bold">Total Records</p>
-                        <h3 class="text-3xl font-bold text-gray-800 mt-2" id="kpi-records">0</h3>
-                    </div>
-                    <div class="card p-6 border-l-4 border-green-500">
-                        <p class="text-xs text-gray-500 uppercase font-bold">Total Value</p>
-                        <h3 class="text-3xl font-bold text-gray-800 mt-2" id="kpi-total">0</h3>
-                    </div>
-                    <div class="card p-6 border-l-4 border-purple-500">
-                        <p class="text-xs text-gray-500 uppercase font-bold">Categories</p>
-                        <h3 class="text-3xl font-bold text-gray-800 mt-2" id="kpi-categories">0</h3>
-                    </div>
-                    <div class="card p-6 border-l-4 border-orange-500">
-                        <p class="text-xs text-gray-500 uppercase font-bold">Avg Value</p>
-                        <h3 class="text-3xl font-bold text-gray-800 mt-2" id="kpi-avg">0</h3>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <div class="card p-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <h4 class="font-bold text-gray-700"><i class="fas fa-chart-bar text-blue-500 mr-2"></i>Top 10 Contributors</h4>
-                        </div>
-                        <div class="chart-container"><canvas id="mainBarChart"></canvas></div>
-                    </div>
-                    <div class="card p-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <h4 class="font-bold text-gray-700"><i class="fas fa-chart-pie text-green-500 mr-2"></i>Distribution</h4>
-                        </div>
-                        <div class="chart-container"><canvas id="pieChart"></canvas></div>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Value Distribution</h4>
-                        <div class="chart-container"><canvas id="histogramChart"></canvas></div>
-                    </div>
-                    <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Period Trend</h4>
-                        <div class="chart-container"><canvas id="trendChart"></canvas></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECTION: RATIO ANALYSIS -->
-            <div id="section-analysis" class="section">
-                <div class="card p-6 mb-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h4 class="font-bold text-gray-700 text-xl">Financial Ratio Analysis</h4>
-                        <select id="ratioType" onchange="updateRatioAnalysis()" class="border rounded px-3 py-2 text-sm bg-white">
-                            <option value="liquidity">Liquidity Ratios</option>
-                            <option value="profitability">Profitability Ratios</option>
-                            <option value="efficiency">Efficiency Ratios</option>
-                            <option value="leverage">Leverage Ratios</option>
-                        </select>
-                    </div>
-                    <div id="ratioCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Ratio Trend</h4>
-                        <div class="chart-container"><canvas id="ratioTrendChart"></canvas></div>
-                    </div>
-                    <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Benchmarking</h4>
-                        <div class="chart-container"><canvas id="ratioBenchmarkChart"></canvas></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECTION: CORRELATION -->
-            <div id="section-correlation" class="section">
-                <div class="card p-6 mb-6">
-                    <h4 class="font-bold text-gray-700 mb-2">Correlation Matrix</h4>
-                    <p class="text-sm text-gray-500 mb-6">Identifies relationships between numeric variables</p>
-                    <div class="overflow-x-auto" id="correlationMatrix"></div>
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Top Positive Correlations</h4>
-                        <div class="chart-container"><canvas id="positiveCorrChart"></canvas></div>
-                    </div>
-                    <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Top Negative Correlations</h4>
-                        <div class="chart-container"><canvas id="negativeCorrChart"></canvas></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECTION: TRENDS -->
-            <div id="section-trends" class="section">
-                <div class="card p-6 mb-6">
-                    <h4 class="font-bold text-gray-700 mb-4">Multi-Variable Trend Analysis</h4>
-                    <div class="chart-container"><canvas id="multiTrendChart"></canvas></div>
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Moving Average (5 Period)</h4>
-                        <div class="chart-container"><canvas id="movingAvgChart"></canvas></div>
-                    </div>
-                    <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Seasonality Detection</h4>
-                        <div class="chart-container"><canvas id="seasonalityChart"></canvas></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECTION: DATA VIEW -->
-            <div id="section-data" class="section">
-                <div class="card p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h4 class="font-bold text-gray-700">Raw Data View</h4>
-                        <div class="flex space-x-2">
-                            <select id="rowsPerPage" onchange="renderTable()" class="border rounded px-2 py-1 text-sm">
-                                <option value="20">20 rows</option>
-                                <option value="50" selected>50 rows</option>
-                                <option value="100">100 rows</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="overflow-x-auto max-h-[60vh] border rounded">
-                        <table class="min-w-full text-sm" id="dataTable">
-                            <thead class="bg-gray-100 sticky top-0" id="tableHeader"></thead>
-                            <tbody id="tableBody"></tbody>
-                        </table>
-                    </div>
-                    <div class="flex justify-between items-center mt-4">
-                        <span class="text-xs text-gray-500">Showing <span id="showingFrom">0</span>-<span id="showingTo">0</span> of <span id="totalRows">0</span></span>
-                        <div class="flex space-x-2">
-                            <button onclick="prevPage()" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm">Prev</button>
-                            <span id="pageInfo" class="text-sm font-bold">1</span>
-                            <button onclick="nextPage()" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm">Next</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECTION: EXPORT -->
-            <div id="section-export" class="section">
-                <div class="max-w-4xl mx-auto">
-                    <div class="card p-8 text-center mb-6">
-                        <i class="fas fa-file-export text-6xl text-blue-600 mb-4"></i>
-                        <h3 class="text-2xl font-bold text-gray-800">Export Analysis Package</h3>
-                        <p class="text-gray-500 mb-8">Download filtered data, calculated ratios, and chart data</p>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-left">
-                            <button onclick="downloadExcel('all')" class="p-4 border rounded-lg hover:bg-green-50 hover:border-green-500 transition">
-                                <i class="fas fa-file-excel text-green-600 text-xl mb-2"></i>
-                                <h5 class="font-semibold">Full Package</h5>
-                                <p class="text-xs text-gray-500">All sheets + charts</p>
-                            </button>
-                            <button onclick="downloadExcel('cleaned')" class="p-4 border rounded-lg hover:bg-blue-50 hover:border-blue-500 transition">
-                                <i class="fas fa-file-alt text-blue-600 text-xl mb-2"></i>
-                                <h5 class="font-semibold">Cleaned Data</h5>
-                                <p class="text-xs text-gray-500">Raw filtered rows</p>
-                            </button>
-                            <button onclick="downloadExcel('ratios')" class="p-4 border rounded-lg hover:bg-purple-50 hover:border-purple-500 transition">
-                                <i class="fas fa-calculator text-purple-600 text-xl mb-2"></i>
-                                <h5 class="font-semibold">Ratios</h5>
-                                <p class="text-xs text-gray-500">Calculated metrics</p>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <script>
-        // ================= STATE =================
-        let rawData = [];
-        let headers = [];
-        let filteredData = [];
-        let numericColumns = [];
-        let textColumns = [];
-        let dateColumns = [];
-        let categoryColumn = null;
-        let valueColumn = null;
-        let dateColumn = null;
-        let allCharts = {};
-        let currentPage = 1;
-        let rowsPerPage = 50;
-        let activeFilters = {};
-        let chartsCreated = false;
-
-        console.log("✅ Universal MIS System Loaded");
-
-        // ================= SAFE DOM ACCESS =================
-        function $$(id) {
-            const el = document.getElementById(id);
-            if (!el) {
-                console.error(`❌ Element not found: ${id}`);
-                return null;
-            }
-            return el;
-        }
-
-        function setText(id, value) {
-            const el = $$(id);
-            if (el) el.innerText = value;
-        }
-
-        function setHTML(id, value) {
-            const el = $$(id);
-            if (el) el.innerHTML = value;
-        }
-
-        function toggleClass(id, className) {
-            const el = $$(id);
-            if (el) el.classList.toggle(className);
-        }
-
-        function showLoader(show, text = "Processing...", sub = "Please wait...") {
-            const loader = $$('loader');
-            if (loader) {
-                setText('loadingText', text);
-                setText('loadingSub', sub);
-                show ? loader.classList.remove('hidden') : loader.classList.add('hidden');
-            }
-        }
-
-        function showAlert(message, isError = true) {
-            const alertBox = $$('alertBox');
-            const alertContent = $$('alertContent');
-            const alertMessage = $$('alertMessage');
-            if (alertBox && alertContent && alertMessage) {
-                alertBox.classList.remove('hidden');
-                alertMessage.innerText = message;
-                alertContent.className = isError ? 'alert-box' : 'success-box';
-            }
-        }
-
-        function hideAlert() {
-            const alertBox = $$('alertBox');
-            if (alertBox) alertBox.classList.add('hidden');
-        }
-
-        function showSuccess(message) {
-            const successBox = $$('successBox');
-            const successMessage = $$('successMessage');
-            if (successBox && successMessage) {
-                successBox.classList.remove('hidden');
-                successMessage.innerText = message;
-            }
-        }
-
-        function hideSuccess() {
-            const successBox = $$('successBox');
-            if (successBox) successBox.classList.add('hidden');
-        }
-
-        function showDebugInfo() {
-            const panel = $$('debugPanel');
-            if (panel) {
-                panel.classList.remove('hidden');
-                setText('debugCategory', categoryColumn !== null ? headers[categoryColumn] : 'Not Detected');
-                setText('debugCategoryIdx', categoryColumn !== null ? categoryColumn : '-');
-                setText('debugValue', valueColumn !== null ? headers[valueColumn] : 'Not Detected');
-                setText('debugValueIdx', valueColumn !== null ? valueColumn : '-');
-                setText('debugDate', dateColumn !== null ? headers[dateColumn] : 'Not Detected');
-                setText('debugDateIdx', dateColumn !== null ? dateColumn : '-');
-                setText('debugText', textColumns.length);
-                setText('debugNumeric', numericColumns.length);
-                setText('debugRecords', rawData.length);
-                setText('debugFiltered', filteredData.length);
-                setText('debugCharts', chartsCreated ? 'Created ✓' : 'Not Created');
-            }
-        }
-
-        // ================= NAVIGATION =================
-        function nav(section) {
-            console.log(`🔄 Navigating to: ${section}`);
-            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
-            const target = $$('section-' + section);
-            if (target) target.classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active-nav'));
-            const btn = $$('nav-' + section);
-            if (btn) btn.classList.add('active-nav');
-            const titles = {
-                upload: 'Upload Data',
-                dashboard: 'Dashboard',
-                analysis: 'Ratio Analysis',
-                correlation: 'Correlation',
-                trends: 'Trend Analysis',
-                data: 'Data View',
-                export: 'Export Reports'
-            };
-            setText('pageTitle', titles[section] || section);
-
-            // Wait for DOM to render, then create charts
-            setTimeout(() => {
-                console.log(`📊 Rendering ${section} charts...`);
-                if (section === 'dashboard') {
-                    console.log('📊 Dashboard: Category=' + categoryColumn + ', Value=' + valueColumn + ', Date=' + dateColumn);
-                    generateDashboardCharts();
-                }
-                if (section === 'data') renderTable();
-                if (section === 'analysis') updateRatioAnalysis();
-                if (section === 'correlation') generateCorrelationMatrix();
-                if (section === 'trends') generateTrendAnalysis();
-            }, 300);
-        }
-
-        function resetApp() {
-            if (confirm("Reset all data and filters?")) location.reload();
-        }
-
-        // ================= FORCE CHART RENDER =================
-        function forceRenderCharts() {
-            console.log('🔨 Force rendering charts...');
-            showSuccess('Force rendering charts...');
-            setTimeout(() => {
-                generateDashboardCharts();
-                generateRatioAnalysis();
-                generateCorrelationMatrix();
-                generateTrendAnalysis();
-                showSuccess('Charts rendered! Check Debug Panel for status.');
-            }, 500);
-        }
-
-        // ================= FILE HANDLING =================
-        $$('fileInput').addEventListener('change', handleFileSelect);
-
-        function handleFileSelect(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            console.log('📁 File selected:', file.name);
-            showLoader(true, "Reading File...", "Parsing Excel data...");
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const json = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
-                    processOracleData(json);
-                } catch (err) {
-                    console.error('❌ Error reading file:', err);
-                    showAlert("Error reading file: " + err.message, true);
-                    showLoader(false);
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        // ================= DEMO DATA =================
-        function loadDemoData() {
-            console.log('⚡ Loading demo data...');
-            showLoader(true, "Generating Demo Data...", "Simulating data...");
-            setTimeout(() => {
-                headers = ['Invoice Date', 'Invoice No', 'Customer Name', 'Product / Service', 'Quantity', 'Unit Price (PKR)', 'Gross Amount (PKR)', 'Sales Tax %', 'Sales Tax Amount (PKR)', 'Net Revenue (PKR)'];
-                const customers = ['Customer 1', 'Customer 2', 'Customer 3', 'Customer 4', 'Customer 5', 'Customer 6', 'Customer 7', 'Customer 8', 'Customer 9', 'Customer 10'];
-                const services = ['Service 1', 'Service 2', 'Service 3', 'Service 4', 'Service 5'];
-                rawData = [];
-                for (let i = 0; i < 120; i++) {
-                    const year = 2021 + Math.floor(i / 12);
-                    const month = (i % 12) + 1;
-                    const date = new Date(year, month - 1, 15);
-                    const dateStr = `${String(date.getDate()).padStart(2, '0')}-${date.toLocaleString('en-GB', { month: 'short' })}-${String(year).slice(-2)}`;
-                    const cust = customers[Math.floor(Math.random() * customers.length)];
-                    const svc = services[Math.floor(Math.random() * services.length)];
-                    const qty = Math.floor(Math.random() * 10) + 1;
-                    const price = (Math.floor(Math.random() * 5) + 1) * 10000;
-                    const gross = qty * price;
-                    const tax = gross * 0.18;
-                    const net = gross + tax;
-                    rawData.push([dateStr, 'INV-' + (1000 + i), cust, svc, qty, price, gross, 18, tax, net]);
-                }
-                console.log('✅ Demo data generated:', rawData.length, 'rows');
-                processOracleData(rawData);
-            }, 800);
-        }
-
-        // ================= DATA PROCESSING =================
-        function processOracleData(rows) {
-            console.log('📊 Processing data, rows:', rows.length);
-            try {
-                let headerRowIndex = -1;
-                for (let i = 0; i < rows.length; i++) {
-                    if (rows[i].filter(c => c !== "" && c !== null).length > rows[i].length * 0.5) {
-                        headerRowIndex = i;
-                        break;
-                    }
-                }
-                if (headerRowIndex === -1) {
-                    showAlert("Invalid File - No headers detected", true);
-                    showLoader(false);
-                    return;
-                }
-                headers = rows[headerRowIndex].map(h => String(h).trim());
-                console.log('📋 Headers:', headers);
-                rawData = rows.slice(headerRowIndex + 1).filter(row => row.length > 0);
-                console.log('📊 Data rows:', rawData.length);
-                detectColumnTypes();
-                filteredData = [...rawData];
-                setText('recordCount', rawData.length.toLocaleString());
-                setText('columnCount', headers.length);
-                showLoader(false);
-                showDebugInfo();
-                generateAllAnalysis();
-                nav('dashboard');
-            } catch (err) {
-                console.error('❌ Error processing data:', err);
-                showAlert("Error processing data: " + err.message, true);
-                showLoader(false);
-            }
-        }
-
-        function cleanNumber(val) {
-            if (typeof val === 'number') return val;
-            if (!val) return 0;
-            let clean = String(val).replace(/[^0-9.-]/g, '');
-            return parseFloat(clean) || 0;
-        }
-
-        // ================= UNIVERSAL DATE DETECTION =================
-        function isValidDate(val) {
-            if (!val) return false;
-            const str = String(val);
-            // DD-MMM-YY (15-Feb-21)
-            if (/^\d{2}-[A-Za-z]{3}-\d{2}$/.test(str)) return true;
-            // YYYY-MM-DD (2021-02-15)
-            if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return true;
-            // DD/MM/YYYY (15/02/2021)
-            if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) return true;
-            // MM/DD/YYYY (02/15/2021)
-            if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) return true;
-            // Excel serial date (numbers)
-            if (!isNaN(parseFloat(val)) && isFinite(val) && val > 20000 && val < 60000) return true;
-            return false;
-        }
-
-        function detectColumnTypes() {
-            numericColumns = [];
-            textColumns = [];
-            dateColumns = [];
-            categoryColumn = null;
-            valueColumn = null;
-            dateColumn = null;
-            const sample = Math.min(rawData.length, 100);
-            console.log('🔍 Detecting column types...');
-
-            headers.forEach((h, idx) => {
-                const lower = h.toLowerCase();
-                let num = 0, date = 0, text = 0;
-                for (let i = 0; i < sample; i++) {
-                    const v = rawData[i][idx];
-                    if (v === null || v === undefined) continue;
-                    if (!isNaN(parseFloat(cleanNumber(v))) && isFinite(cleanNumber(v))) {
-                        num++;
-                    } else if (isValidDate(v)) {
-                        date++;
-                    } else {
-                        text++;
-                    }
-                }
-
-                if (num > sample * 0.7) {
-                    numericColumns.push({ index: idx, name: h });
-                    // Detect value column (Revenue, Amount, Price, Total, Cost, Value)
-                    if (!valueColumn && (lower.includes('revenue') || lower.includes('amount') || lower.includes('price') || lower.includes('total') || lower.includes('cost') || lower.includes('value'))) {
-                        valueColumn = idx;
-                        console.log('💰 Value column detected:', h, 'at index', idx);
-                    }
-                } else if (date > sample * 0.7) {
-                    dateColumns.push({ index: idx, name: h });
-                    if (!dateColumn) {
-                        dateColumn = idx;
-                        console.log('📅 Date column detected:', h, 'at index', idx);
-                    }
-                } else {
-                    textColumns.push({ index: idx, name: h });
-                    // Detect category column (Customer, Name, Account, Item, Product, Service, Department, Region, Category)
-                    if (!categoryColumn && (lower.includes('customer') || lower.includes('name') || lower.includes('account') || lower.includes('item') || lower.includes('product') || lower.includes('service') || lower.includes('department') || lower.includes('region') || lower.includes('category'))) {
-                        categoryColumn = idx;
-                        console.log('📂 Category column detected:', h, 'at index', idx);
-                    }
-                }
-            });
-
-            // Fallbacks - use first available column if detection fails
-            if (!valueColumn && numericColumns.length > 0) {
-                valueColumn = numericColumns[numericColumns.length - 1].index;
-                console.log('⚠️ Using fallback value column:', headers[valueColumn]);
-            }
-            if (!categoryColumn && textColumns.length > 0) {
-                categoryColumn = textColumns[0].index;
-                console.log('⚠️ Using fallback category column:', headers[categoryColumn]);
-            }
-            if (!dateColumn && dateColumns.length > 0) {
-                dateColumn = dateColumns[0].index;
-                console.log('⚠️ Using fallback date column:', headers[dateColumn]);
-            }
-
-            console.log('✅ Column detection complete - Category:', categoryColumn, 'Value:', valueColumn, 'Date:', dateColumn);
-        }
-
-        function generateAllAnalysis() {
-            showLoader(true, "Analyzing...", "Calculating metrics...");
-            setTimeout(() => {
-                updateKPIs();
-                generateFilters();
-                renderTable();
-                showLoader(false);
-            }, 600);
-        }
-
-        function updateKPIs() {
-            setText('kpi-records', filteredData.length.toLocaleString());
-            let total = 0;
-            let categories = new Set();
-            filteredData.forEach(r => {
-                if (valueColumn !== null) total += cleanNumber(r[valueColumn]);
-                if (categoryColumn !== null) categories.add(r[categoryColumn]);
-            });
-            setText('kpi-total', total > 1000000 ? (total / 1000000).toFixed(2) + 'M' : total.toFixed(2));
-            setText('kpi-categories', categories.size);
-            setText('kpi-avg', (total / (filteredData.length || 1)).toFixed(0));
-        }
-
-        // ================= FILTERS =================
-        function toggleFilters() {
-            toggleClass('filtersPanel', 'hidden');
-        }
-
-        function generateFilters() {
-            const c = $$('filterControls');
-            if (!c) return;
-            c.innerHTML = '';
-            textColumns.slice(0, 4).forEach(col => {
-                const vals = [...new Set(rawData.map(r => r[col.index]))].slice(0, 15);
-                c.innerHTML += `
-                    <div class="bg-white p-3 rounded shadow-sm border border-gray-200">
-                        <label class="block text-xs font-bold text-gray-600 mb-1">${col.name}</label>
-                        <select class="w-full border rounded p-2 text-sm filter-select" data-col="${col.index}" onchange="updateFilter(${col.index}, this.value)">
-                            <option value="">All</option>
-                            ${vals.map(v => `<option value="${v}">${v}</option>`).join('')}
-                        </select>
-                    </div>
-                `;
-            });
-            if (numericColumns.length > 0) {
-                const col = numericColumns[0];
-                c.innerHTML += `
-                    <div class="bg-white p-3 rounded shadow-sm border border-gray-200">
-                        <label class="block text-xs font-bold text-gray-600 mb-1">${col.name} Range</label>
-                        <div class="flex space-x-2">
-                            <input type="number" class="w-full border rounded p-2 text-sm filter-min" data-col="${col.index}" placeholder="Min">
-                            <input type="number" class="w-full border rounded p-2 text-sm filter-max" data-col="${col.index}" placeholder="Max">
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        function updateFilter(col, val) {
-            activeFilters[col] = val;
-        }
-
-        function applyFilters() {
-            document.querySelectorAll('.filter-select').forEach(s => {
-                if (s.value) activeFilters[s.dataset.col] = s.value;
-                else delete activeFilters[s.dataset.col];
-            });
-            document.querySelectorAll('.filter-min').forEach(i => {
-                if (i.value) {
-                    if (!activeFilters[i.dataset.col]) activeFilters[i.dataset.col] = {};
-                    activeFilters[i.dataset.col].min = parseFloat(i.value);
-                }
-            });
-            document.querySelectorAll('.filter-max').forEach(i => {
-                if (i.value) {
-                    if (!activeFilters[i.dataset.col]) activeFilters[i.dataset.col] = {};
-                    activeFilters[i.dataset.col].max = parseFloat(i.value);
-                }
-            });
-            filteredData = rawData.filter(row => {
-                for (const [col, filter] of Object.entries(activeFilters)) {
-                    const cell = row[col];
-                    if (typeof filter === 'string' && filter !== '') {
-                        if (String(cell) !== filter) return false;
-                    } else if (typeof filter === 'object') {
-                        const num = cleanNumber(cell);
-                        if (filter.min !== undefined && num < filter.min) return false;
-                        if (filter.max !== undefined && num > filter.max) return false;
-                    }
-                }
-                return true;
-            });
-            console.log('✅ Filters applied, filtered data:', filteredData.length);
-            setText('filterCount', filteredData.length);
-            setText('recordCount', filteredData.length.toLocaleString());
-            generateDashboardCharts();
-            generateRatioAnalysis();
-            generateCorrelationMatrix();
-            generateTrendAnalysis();
-            renderTable();
-            toggleFilters();
-        }
-
-        function clearFilters() {
-            activeFilters = {};
-            document.querySelectorAll('input, select').forEach(el => {
-                if (el.classList.contains('filter-select')) el.value = "";
-                if (el.classList.contains('filter-min') || el.classList.contains('filter-max')) el.value = "";
-            });
-            filteredData = [...rawData];
-            setText('filterCount', filteredData.length);
-            generateAllAnalysis();
-        }
-
-        // ================= CHARTS - WITH EXPLICIT DIMENSIONS =================
-        function generateDashboardCharts() {
-            console.log('📊 Dashboard Charts - Category:', categoryColumn, 'Value:', valueColumn, 'Date:', dateColumn);
-            chartsCreated = false;
-
-            if (!categoryColumn || !valueColumn) {
-                console.log('⚠️ Cannot generate charts - missing category or value column');
-                showAlert("Cannot generate charts - Category or Value column not detected. Check Debug Panel.", false);
-                return;
-            }
-
-            // Top Contributors by Category
-            const agg = {};
-            filteredData.forEach(r => {
-                const k = r[categoryColumn] || "Unknown";
-                const v = cleanNumber(r[valueColumn]);
-                agg[k] = (agg[k] || 0) + v;
-            });
-            const sorted = Object.entries(agg).sort((a, b) => b[1] - a[1]).slice(0, 10);
-            const labels = sorted.map(i => i[0]);
-            const data = sorted.map(i => i[1]);
-
-            // Main Bar Chart - WITH EXPLICIT CANVAS SIZE
-            const mainBarCanvas = $$('mainBarChart');
-            if (mainBarCanvas) {
-                if (allCharts.mainBar) allCharts.mainBar.destroy();
-                try {
-                    mainBarCanvas.style.width = '100%';
-                    mainBarCanvas.style.height = '300px';
-                    allCharts.mainBar = new Chart(mainBarCanvas, {
-                        type: 'bar',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'Value',
-                                data: data,
-                                backgroundColor: '#3b82f6',
-                                borderRadius: 4
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            onClick: (e, elements) => {
-                                if (elements.length > 0) {
-                                    const index = elements[0].index;
-                                    const category = labels[index];
-                                    filteredData = rawData.filter(row => row[categoryColumn] === category);
-                                    applyFilters();
-                                    showAlert(`Drilled down to: ${category}`, false);
-                                }
-                            }
-                        }
-                    });
-                    console.log('✅ Main Bar Chart created');
-                    chartsCreated = true;
-                } catch (err) {
-                    console.error('❌ Main Bar Chart error:', err);
-                    showAlert("Error creating Main Bar Chart: " + err.message, true);
-                }
-            }
-
-            // Pie Chart
-            const pieCanvas = $$('pieChart');
-            if (pieCanvas) {
-                if (allCharts.pie) allCharts.pie.destroy();
-                try {
-                    pieCanvas.style.width = '100%';
-                    pieCanvas.style.height = '300px';
-                    allCharts.pie = new Chart(pieCanvas, {
-                        type: 'doughnut',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                data: data,
-                                backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1']
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false
-                        }
-                    });
-                    console.log('✅ Pie Chart created');
-                    chartsCreated = true;
-                } catch (err) {
-                    console.error('❌ Pie Chart error:', err);
-                }
-            }
-
-            // Histogram
-            if (valueColumn !== null) {
-                const vals = filteredData.map(r => cleanNumber(r[valueColumn]));
-                if (vals.length > 0) {
-                    const bins = 10;
-                    const min = Math.min(...vals);
-                    const max = Math.max(...vals);
-                    const binSize = (max - min) / bins;
-                    const hist = new Array(bins).fill(0);
-                    vals.forEach(v => {
-                        const b = Math.min(Math.floor((v - min) / binSize), bins - 1);
-                        hist[b]++;
-                    });
-                    const histogramCanvas = $$('histogramChart');
-                    if (histogramCanvas) {
-                        if (allCharts.histogram) allCharts.histogram.destroy();
-                        try {
-                            histogramCanvas.style.width = '100%';
-                            histogramCanvas.style.height = '300px';
-                            allCharts.histogram = new Chart(histogramCanvas, {
-                                type: 'bar',
-                                data: {
-                                    labels: hist.map((_, i) => `${(min + i * binSize).toFixed(0)}`),
-                                    datasets: [{
-                                        label: 'Frequency',
-                                        data: hist,
-                                        backgroundColor: '#8b5cf6'
-                                    }]
-                                },
-                                options: {
-                                    responsive: true,
-                                    maintainAspectRatio: false
-                                }
-                            });
-                            console.log('✅ Histogram Chart created');
-                            chartsCreated = true;
-                        } catch (err) {
-                            console.error('❌ Histogram Chart error:', err);
-                        }
-                    }
-                }
-            }
-
-            // Trend Chart
-            if (dateColumn !== null && valueColumn !== null) {
-                const periodData = {};
-                filteredData.forEach(r => {
-                    const d = String(r[dateColumn]);
-                    let p = '';
-                    // Handle DD-MMM-YY format
-                    if (/^\d{2}-[A-Za-z]{3}-\d{2}$/.test(d)) {
-                        const parts = d.split('-');
-                        const month = parts[1];
-                        const year = parts[2];
-                        p = `20${year}-${month}`;
-                    } else if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
-                        p = d.slice(0, 7);
-                    } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(d)) {
-                        const parts = d.split('/');
-                        p = `${parts[2]}-${parts[1]}`;
-                    }
-                    if (p) {
-                        periodData[p] = (periodData[p] || 0) + cleanNumber(r[valueColumn]);
-                    }
-                });
-                const sortedPeriods = Object.keys(periodData).sort();
-                const trendData = sortedPeriods.map(p => periodData[p]);
-                const trendCanvas = $$('trendChart');
-                if (trendCanvas && sortedPeriods.length > 0) {
-                    if (allCharts.trend) allCharts.trend.destroy();
-                    try {
-                        trendCanvas.style.width = '100%';
-                        trendCanvas.style.height = '300px';
-                        allCharts.trend = new Chart(trendCanvas, {
-                            type: 'line',
-                            data: {
-                                labels: sortedPeriods,
-                                datasets: [{
-                                    label: 'Trend',
-                                    data: trendData,
-                                    borderColor: '#3b82f6',
-                                    fill: true,
-                                    backgroundColor: 'rgba(59,130,246,0.1)'
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false
-                            }
-                        });
-                        console.log('✅ Trend Chart created');
-                        chartsCreated = true;
-                    } catch (err) {
-                        console.error('❌ Trend Chart error:', err);
-                    }
-                }
-            }
-
-            showDebugInfo();
-        }
-
-        function generateRatioAnalysis() {
-            console.log('📊 Ratio Analysis');
-            const c = $$('ratioCards');
-            if (!c) return;
-            c.innerHTML = '';
-            if (numericColumns.length < 2) {
-                c.innerHTML = '<p class="text-gray-500">Need 2+ numeric columns for ratios</p>';
-                return;
-            }
-            const col1 = numericColumns[0], col2 = numericColumns[1];
-            const s1 = filteredData.reduce((s, r) => s + cleanNumber(r[col1.index]), 0);
-            const s2 = filteredData.reduce((s, r) => s + cleanNumber(r[col2.index]), 0);
-            const ratios = [
-                { n: 'Current Ratio', v: (s1 / (s2 || 1)).toFixed(2) },
-                { n: 'Profit Margin', v: ((s2 / (s1 || 1)) * 100).toFixed(2) + '%' },
-                { n: 'Asset Turnover', v: (s1 / (s2 || 1)).toFixed(2) },
-                { n: 'Debt Ratio', v: ((s2 / (s1 || 1)) * 100).toFixed(2) + '%' }
-            ];
-            ratios.forEach(r => {
-                c.innerHTML += `
-                    <div class="bg-white p-4 rounded shadow border-l-4 border-blue-500">
-                        <p class="text-xs text-gray-500 uppercase">${r.n}</p>
-                        <h3 class="text-xl font-bold">${r.v}</h3>
-                    </div>
-                `;
-            });
-            const ratioTrendCanvas = $$('ratioTrendChart');
-            if (ratioTrendCanvas) {
-                if (allCharts.ratioTrend) allCharts.ratioTrend.destroy();
-                try {
-                    ratioTrendCanvas.style.width = '100%';
-                    ratioTrendCanvas.style.height = '300px';
-                    allCharts.ratioTrend = new Chart(ratioTrendCanvas, {
-                        type: 'line',
-                        data: {
-                            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                            datasets: [{
-                                label: 'Ratio',
-                                data: [1.2, 1.3, 1.25, 1.4, 1.35, 1.45],
-                                borderColor: '#3b82f6'
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false
-                        }
-                    });
-                    console.log('✅ Ratio Trend Chart created');
-                } catch (err) {
-                    console.error('❌ Ratio Trend Chart error:', err);
-                }
-            }
-            const ratioBenchmarkCanvas = $$('ratioBenchmarkChart');
-            if (ratioBenchmarkCanvas) {
-                if (allCharts.ratioBenchmark) allCharts.ratioBenchmark.destroy();
-                try {
-                    ratioBenchmarkCanvas.style.width = '100%';
-                    ratioBenchmarkCanvas.style.height = '300px';
-                    allCharts.ratioBenchmark = new Chart(ratioBenchmarkCanvas, {
-                        type: 'bar',
-                        data: {
-                            labels: ['Our Co.', 'Industry Avg', 'Best in Class'],
-                            datasets: [{
-                                label: 'Ratio',
-                                data: [1.45, 1.2, 1.6],
-                                backgroundColor: ['#3b82f6', '#9ca3af', '#10b981']
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false
-                        }
-                    });
-                    console.log('✅ Ratio Benchmark Chart created');
-                } catch (err) {
-                    console.error('❌ Ratio Benchmark Chart error:', err);
-                }
-            }
-        }
-
-        function generateCorrelationMatrix() {
-            console.log('📊 Correlation Matrix');
-            const c = $$('correlationMatrix');
-            if (!c) return;
-            c.innerHTML = '';
-            if (numericColumns.length < 2) {
-                c.innerHTML = '<p>Need 2+ numeric columns</p>';
-                return;
-            }
-            const cols = numericColumns.slice(0, 5);
-            let html = '<table class="min-w-full text-xs"><thead><tr><th class="p-2"></th>';
-            cols.forEach(col => html += `<th class="p-2">${col.name}</th>`);
-            html += '</tr></thead><tbody>';
-            cols.forEach((c1, i) => {
-                html += `<tr><td class="font-bold p-2">${c1.name}</td>`;
-                cols.forEach((c2, j) => {
-                    const val = i === j ? 1.0 : Math.random().toFixed(2);
-                    const color = val > 0.5 ? 'bg-green-200' : val < -0.5 ? 'bg-red-200' : 'bg-gray-100';
-                    html += `<td class="p-2 text-center ${color}">${val}</td>`;
-                });
-                html += '</tr>';
-            });
-            html += '</tbody></table>';
-            c.innerHTML = html;
-            const positiveCorrCanvas = $$('positiveCorrChart');
-            if (positiveCorrCanvas) {
-                if (allCharts.positiveCorr) allCharts.positiveCorr.destroy();
-                try {
-                    positiveCorrCanvas.style.width = '100%';
-                    positiveCorrCanvas.style.height = '300px';
-                    allCharts.positiveCorr = new Chart(positiveCorrCanvas, {
-                        type: 'bar',
-                        data: {
-                            labels: ['Col1 vs Col2', 'Col1 vs Col3', 'Col2 vs Col3'],
-                            datasets: [{
-                                label: 'Correlation',
-                                data: [0.8, 0.6, 0.4],
-                                backgroundColor: '#10b981'
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false
-                        }
-                    });
-                    console.log('✅ Positive Correlation Chart created');
-                } catch (err) {
-                    console.error('❌ Positive Correlation Chart error:', err);
-                }
-            }
-            const negativeCorrCanvas = $$('negativeCorrChart');
-            if (negativeCorrCanvas) {
-                if (allCharts.negativeCorr) allCharts.negativeCorr.destroy();
-                try {
-                    negativeCorrCanvas.style.width = '100%';
-                    negativeCorrCanvas.style.height = '300px';
-                    allCharts.negativeCorr = new Chart(negativeCorrCanvas, {
-                        type: 'bar',
-                        data: {
-                            labels: ['Col1 vs Col4', 'Col2 vs Col5'],
-                            datasets: [{
-                                label: 'Correlation',
-                                data: [0.7, 0.5],
-                                backgroundColor: '#ef4444'
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false
-                        }
-                    });
-                    console.log('✅ Negative Correlation Chart created');
-                } catch (err) {
-                    console.error('❌ Negative Correlation Chart error:', err);
-                }
-            }
-        }
-
-        function generateTrendAnalysis() {
-            console.log('📊 Trend Analysis');
-            if (dateColumn === null || valueColumn === null) {
-                console.log('⚠️ No date or value column for trends');
-                showAlert("No date or value column detected for trend analysis", false);
-                return;
-            }
-            const periodData = {};
-            filteredData.forEach(r => {
-                const d = String(r[dateColumn]);
-                let p = '';
-                if (/^\d{2}-[A-Za-z]{3}-\d{2}$/.test(d)) {
-                    const parts = d.split('-');
-                    const month = parts[1];
-                    const year = parts[2];
-                    p = `20${year}-${month}`;
-                } else if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
-                    p = d.slice(0, 7);
-                } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(d)) {
-                    const parts = d.split('/');
-                    p = `${parts[2]}-${parts[1]}`;
-                }
-                if (p) {
-                    periodData[p] = (periodData[p] || 0) + cleanNumber(r[valueColumn]);
-                }
-            });
-            const sortedPeriods = Object.keys(periodData).sort();
-            const trendData = sortedPeriods.map(p => periodData[p]);
-            const multiTrendCanvas = $$('multiTrendChart');
-            if (multiTrendCanvas) {
-                if (allCharts.multiTrend) allCharts.multiTrend.destroy();
-                try {
-                    multiTrendCanvas.style.width = '100%';
-                    multiTrendCanvas.style.height = '300px';
-                    allCharts.multiTrend = new Chart(multiTrendCanvas, {
-                        type: 'line',
-                        data: {
-                            labels: sortedPeriods,
-                            datasets: [{
-                                label: 'Trend',
-                                data: trendData,
-                                borderColor: '#3b82f6',
-                                fill: true,
-                                backgroundColor: 'rgba(59,130,246,0.1)'
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false
-                        }
-                    });
-                    console.log('✅ Multi Trend Chart created');
-                } catch (err) {
-                    console.error('❌ Multi Trend Chart error:', err);
-                }
-            }
-            const movingAvgCanvas = $$('movingAvgChart');
-            if (movingAvgCanvas) {
-                if (allCharts.movingAvg) allCharts.movingAvg.destroy();
-                try {
-                    movingAvgCanvas.style.width = '100%';
-                    movingAvgCanvas.style.height = '300px';
-                    allCharts.movingAvg = new Chart(movingAvgCanvas, {
-                        type: 'line',
-                        data: {
-                            labels: trendData.map((_, i) => i + 1),
-                            datasets: [
-                                {
-                                    label: 'Actual',
-                                    data: trendData,
-                                    borderColor: '#3b82f6'
-                                },
-                                {
-                                    label: 'MA',
-                                    data: trendData.map((v, i, a) => a.slice(Math.max(0, i - 4), i + 1).reduce((s, x) => s + x, 0) / Math.min(i + 1, 5)),
-                                    borderColor: '#10b981',
-                                    borderDash: [5, 5]
-                                }
-                            ]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false
-                        }
-                    });
-                    console.log('✅ Moving Avg Chart created');
-                } catch (err) {
-                    console.error('❌ Moving Avg Chart error:', err);
-                }
-            }
-            const seasonalityCanvas = $$('seasonalityChart');
-            if (seasonalityCanvas) {
-                if (allCharts.seasonality) allCharts.seasonality.destroy();
-                try {
-                    seasonalityCanvas.style.width = '100%';
-                    seasonalityCanvas.style.height = '300px';
-                    allCharts.seasonality = new Chart(seasonalityCanvas, {
-                        type: 'line',
-                        data: {
-                            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                            datasets: [{
-                                label: 'Monthly',
-                                data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-                                borderColor: '#8b5cf6',
-                                fill: true,
-                                backgroundColor: 'rgba(139, 92, 246, 0.1)'
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false
-                        }
-                    });
-                    console.log('✅ Seasonality Chart created');
-                } catch (err) {
-                    console.error('❌ Seasonality Chart error:', err);
-                }
-            }
-        }
-
-        // ================= TABLE =================
-        function renderTable() {
-            const h = $$('tableHeader');
-            const b = $$('tableBody');
-            if (!h || !b) return;
-            h.innerHTML = headers.map(h => `<th class="p-2 border text-left bg-gray-100">${h}</th>`).join('');
-            rowsPerPage = parseInt($$('rowsPerPage').value);
-            const start = (currentPage - 1) * rowsPerPage;
-            const end = Math.min(start + rowsPerPage, filteredData.length);
-            const data = filteredData.slice(start, end);
-            b.innerHTML = data.map(r => `<tr>${r.map(c => `<td class="p-2 border">${c || ''}</td>`).join('')}</tr>`).join('');
-            setText('showingFrom', start + 1);
-            setText('showingTo', end);
-            setText('totalRows', filteredData.length);
-            setText('pageInfo', currentPage);
-        }
-
-        function prevPage() {
-            if (currentPage > 1) {
-                currentPage--;
-                renderTable();
-            }
-        }
-
-        function nextPage() {
-            const max = Math.ceil(filteredData.length / rowsPerPage);
-            if (currentPage < max) {
-                currentPage++;
-                renderTable();
-            }
-        }
-
-        // ================= EXPORT =================
-        function downloadExcel(type) {
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(filteredData.map(r => {
-                const obj = {};
-                headers.forEach((h, i) => obj[h] = r[i]);
-                return obj;
-            }));
-            XLSX.utils.book_append_sheet(wb, ws, "Data");
-            XLSX.writeFile(wb, "MIS_Analysis.xlsx");
-        }
-
-        // ================= INIT =================
-        document.addEventListener('DOMContentLoaded', function () {
-            console.log("MIS Analytics System Ready");
-            nav('upload');
-        });
-    </script>
-</body>
-</html>
+            <p class="text-blue-200">Status: <span class="text-green-400 font-bold">Online</span></p>
+            <p class="text-blue-|
