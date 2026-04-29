@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sales Analytics Dashboard | Oracle Fusion</title>
+    <title>Universal MIS Analytics | Oracle Fusion</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -27,14 +27,15 @@
         th { background-color: #f9fafb; font-weight: 600; }
         .debug-panel { background: #fef3c7; border: 2px solid #f59e0b; padding: 15px; margin: 10px; border-radius: 5px; font-size: 12px; }
         .alert-box { background: #fee2e2; border: 2px solid #ef4444; padding: 15px; margin: 10px; border-radius: 5px; }
+        .success-box { background: #d1fae5; border: 2px solid #10b981; padding: 15px; margin: 10px; border-radius: 5px; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden text-gray-800">
     <!-- Sidebar -->
     <aside class="sidebar w-64 hidden md:flex flex-col shadow-xl z-20">
         <div class="p-6 border-b border-blue-800">
-            <h1 class="text-2xl font-bold tracking-tight"><i class="fas fa-chart-line mr-2"></i>Sales Analytics</h1>
-            <p class="text-xs text-blue-200 mt-1">Oracle Fusion Deep Analysis</p>
+            <h1 class="text-2xl font-bold tracking-tight"><i class="fas fa-chart-line mr-2"></i>Universal MIS</h1>
+            <p class="text-xs text-blue-200 mt-1">Works with ANY Data</p>
         </div>
         <nav class="flex-1 overflow-y-auto py-4 space-y-1">
             <button onclick="nav('upload')" class="nav-btn w-full text-left px-6 py-3 active-nav" id="nav-upload"><i class="fas fa-upload w-6"></i> Upload Data</button>
@@ -51,6 +52,7 @@
             <p class="text-blue-300 mt-1">Columns: <span id="columnCount">0</span></p>
         </div>
     </aside>
+
     <!-- Main Content -->
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
         <!-- Header -->
@@ -62,15 +64,19 @@
                 <button onclick="toggleFilters()" class="bg-indigo-600 text-white px-4 py-2 rounded shadow hover:bg-indigo-700 text-sm transition">
                     <i class="fas fa-filter mr-2"></i>Filters
                 </button>
+                <button onclick="forceRenderCharts()" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 text-sm transition">
+                    <i class="fas fa-sync mr-2"></i>Force Charts
+                </button>
                 <button onclick="resetApp()" class="bg-white border border-gray-300 text-gray-600 px-4 py-2 rounded shadow-sm hover:bg-gray-50 text-sm transition">
                     <i class="fas fa-trash-alt mr-2"></i>Reset
                 </button>
             </div>
         </header>
+
         <!-- Advanced Filters Panel -->
         <div id="filtersPanel" class="hidden bg-gray-50 border-b border-gray-200 p-4 transition-all duration-300">
             <div class="flex justify-between items-center mb-3">
-                <h3 class="font-bold text-gray-700"><i class="fas fa-sliders-h mr-2"></i>Deep Analysis Filters</h3>
+                <h3 class="font-bold text-gray-700"><i class="fas fa-sliders-h mr-2"></i>Filters</h3>
                 <button onclick="toggleFilters()" class="text-gray-500 hover:text-gray-700"><i class="fas fa-chevron-up"></i></button>
             </div>
             <div id="filterControls" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4"></div>
@@ -78,10 +84,11 @@
                 <span class="text-sm text-gray-600">Showing <span id="filterCount" class="font-bold">0</span> records</span>
                 <div class="space-x-2">
                     <button onclick="clearFilters()" class="text-sm text-red-600 hover:underline">Clear All</button>
-                    <button onclick="applyFilters()" class="bg-indigo-600 text-white px-4 py-1.5 rounded text-sm hover:bg-indigo-700">Apply Filters</button>
+                    <button onclick="applyFilters()" class="bg-indigo-600 text-white px-4 py-1.5 rounded text-sm hover:bg-indigo-700">Apply</button>
                 </div>
             </div>
         </div>
+
         <!-- Scrollable Content Area -->
         <div class="flex-1 overflow-y-auto p-6 relative bg-gray-50">
             <!-- Loader Overlay -->
@@ -90,31 +97,40 @@
                 <p class="text-lg font-bold text-gray-700" id="loadingText">Processing...</p>
                 <p class="text-sm text-gray-500" id="loadingSub">Please wait</p>
             </div>
+
             <!-- Debug Panel -->
             <div id="debugPanel" class="hidden mb-6">
                 <div class="debug-panel">
-                    <h4 class="font-bold mb-2">🔍 Debug Info</h4>
-                    <p><strong>Category Column:</strong> <span id="debugCategory">Not Set</span> (Index: <span id="debugCategoryIdx">-</span>)</p>
-                    <p><strong>Value Column:</strong> <span id="debugValue">Not Set</span> (Index: <span id="debugValueIdx">-</span>)</p>
-                    <p><strong>Date Column:</strong> <span id="debugDate">Not Set</span> (Index: <span id="debugDateIdx">-</span>)</p>
-                    <p><strong>Text Columns:</strong> <span id="debugText">0</span></p>
-                    <p><strong>Numeric Columns:</strong> <span id="debugNumeric">0</span></p>
-                    <p><strong>Total Records:</strong> <span id="debugRecords">0</span></p>
-                    <p><strong>Filtered Records:</strong> <span id="debugFiltered">0</span></p>
+                    <h4 class="font-bold mb-2">🔍 Column Detection Status</h4>
+                    <p><strong>Category:</strong> <span id="debugCategory">Not Set</span> (Idx: <span id="debugCategoryIdx">-</span>)</p>
+                    <p><strong>Value:</strong> <span id="debugValue">Not Set</span> (Idx: <span id="debugValueIdx">-</span>)</p>
+                    <p><strong>Date:</strong> <span id="debugDate">Not Set</span> (Idx: <span id="debugDateIdx">-</span>)</p>
+                    <p><strong>Text Columns:</strong> <span id="debugText">0</span> | <strong>Numeric Columns:</strong> <span id="debugNumeric">0</span></p>
+                    <p><strong>Total Records:</strong> <span id="debugRecords">0</span> | <strong>Filtered:</strong> <span id="debugFiltered">0</span></p>
+                    <p><strong>Charts Status:</strong> <span id="debugCharts">Not Created</span></p>
                 </div>
             </div>
+
             <!-- Alert Box -->
             <div id="alertBox" class="hidden mb-6">
-                <div class="alert-box">
+                <div id="alertContent" class="alert-box">
                     <p id="alertMessage" class="font-bold"></p>
                 </div>
             </div>
+
+            <!-- Success Box -->
+            <div id="successBox" class="hidden mb-6">
+                <div class="success-box">
+                    <p id="successMessage" class="font-bold text-green-800"></p>
+                </div>
+            </div>
+
             <!-- SECTION: UPLOAD -->
             <div id="section-upload" class="section active">
                 <div class="max-w-5xl mx-auto mt-10">
                     <div class="text-center mb-10">
-                        <h1 class="text-4xl font-bold text-gray-800 mb-2">Sales Data Ingestion</h1>
-                        <p class="text-gray-500">Upload your Sales Register (Excel/CSV)</p>
+                        <h1 class="text-4xl font-bold text-gray-800 mb-2">Universal Data Ingestion</h1>
+                        <p class="text-gray-500">Works with Sales, Fixed Assets, Payables, Stocks, etc.</p>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="card p-8 border-2 border-dashed border-gray-300 hover:border-blue-500 transition cursor-pointer bg-white" onclick="document.getElementById('fileInput').click()">
@@ -127,8 +143,8 @@
                         <div class="card p-8 border border-purple-200 bg-purple-50">
                             <div class="text-center">
                                 <i class="fas fa-bolt text-5xl text-purple-500 mb-4"></i>
-                                <h3 class="text-xl font-bold text-gray-700">Test with Your Data Format</h3>
-                                <p class="text-sm text-gray-500 mt-2">Demo matches your Invoice Date format (15-Feb-21)</p>
+                                <h3 class="text-xl font-bold text-gray-700">Test with Demo Data</h3>
+                                <p class="text-sm text-gray-500 mt-2">See how it works</p>
                                 <button onclick="loadDemoData()" class="mt-4 bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700 w-full">Load Demo Data</button>
                             </div>
                         </div>
@@ -136,51 +152,53 @@
                     <input type="file" id="fileInput" class="hidden" accept=".xlsx,.xls,.csv">
                 </div>
             </div>
+
             <!-- SECTION: DASHBOARD -->
             <div id="section-dashboard" class="section">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                     <div class="card p-6 border-l-4 border-blue-500">
-                        <p class="text-xs text-gray-500 uppercase font-bold">Total Invoices</p>
+                        <p class="text-xs text-gray-500 uppercase font-bold">Total Records</p>
                         <h3 class="text-3xl font-bold text-gray-800 mt-2" id="kpi-records">0</h3>
                     </div>
                     <div class="card p-6 border-l-4 border-green-500">
-                        <p class="text-xs text-gray-500 uppercase font-bold">Total Revenue</p>
+                        <p class="text-xs text-gray-500 uppercase font-bold">Total Value</p>
                         <h3 class="text-3xl font-bold text-gray-800 mt-2" id="kpi-total">0</h3>
                     </div>
                     <div class="card p-6 border-l-4 border-purple-500">
-                        <p class="text-xs text-gray-500 uppercase font-bold">Unique Customers</p>
-                        <h3 class="text-3xl font-bold text-gray-800 mt-2" id="kpi-customers">0</h3>
+                        <p class="text-xs text-gray-500 uppercase font-bold">Categories</p>
+                        <h3 class="text-3xl font-bold text-gray-800 mt-2" id="kpi-categories">0</h3>
                     </div>
                     <div class="card p-6 border-l-4 border-orange-500">
-                        <p class="text-xs text-gray-500 uppercase font-bold">Avg Invoice Value</p>
+                        <p class="text-xs text-gray-500 uppercase font-bold">Avg Value</p>
                         <h3 class="text-3xl font-bold text-gray-800 mt-2" id="kpi-avg">0</h3>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     <div class="card p-6">
                         <div class="flex justify-between items-center mb-4">
-                            <h4 class="font-bold text-gray-700"><i class="fas fa-chart-bar text-blue-500 mr-2"></i>Top 10 Customers by Revenue</h4>
+                            <h4 class="font-bold text-gray-700"><i class="fas fa-chart-bar text-blue-500 mr-2"></i>Top 10 Contributors</h4>
                         </div>
                         <div class="chart-container"><canvas id="mainBarChart"></canvas></div>
                     </div>
                     <div class="card p-6">
                         <div class="flex justify-between items-center mb-4">
-                            <h4 class="font-bold text-gray-700"><i class="fas fa-chart-pie text-green-500 mr-2"></i>Revenue by Service</h4>
+                            <h4 class="font-bold text-gray-700"><i class="fas fa-chart-pie text-green-500 mr-2"></i>Distribution</h4>
                         </div>
                         <div class="chart-container"><canvas id="pieChart"></canvas></div>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Monthly Revenue Trend</h4>
-                        <div class="chart-container"><canvas id="trendChart"></canvas></div>
+                        <h4 class="font-bold text-gray-700 mb-4">Value Distribution</h4>
+                        <div class="chart-container"><canvas id="histogramChart"></canvas></div>
                     </div>
                     <div class="card p-6">
-                        <h4 class="font-bold text-gray-700 mb-4">Revenue Distribution</h4>
-                        <div class="chart-container"><canvas id="histogramChart"></canvas></div>
+                        <h4 class="font-bold text-gray-700 mb-4">Period Trend</h4>
+                        <div class="chart-container"><canvas id="trendChart"></canvas></div>
                     </div>
                 </div>
             </div>
+
             <!-- SECTION: RATIO ANALYSIS -->
             <div id="section-analysis" class="section">
                 <div class="card p-6 mb-6">
@@ -206,6 +224,7 @@
                     </div>
                 </div>
             </div>
+
             <!-- SECTION: CORRELATION -->
             <div id="section-correlation" class="section">
                 <div class="card p-6 mb-6">
@@ -224,6 +243,7 @@
                     </div>
                 </div>
             </div>
+
             <!-- SECTION: TRENDS -->
             <div id="section-trends" class="section">
                 <div class="card p-6 mb-6">
@@ -241,6 +261,7 @@
                     </div>
                 </div>
             </div>
+
             <!-- SECTION: DATA VIEW -->
             <div id="section-data" class="section">
                 <div class="card p-6">
@@ -270,6 +291,7 @@
                     </div>
                 </div>
             </div>
+
             <!-- SECTION: EXPORT -->
             <div id="section-export" class="section">
                 <div class="max-w-4xl mx-auto">
@@ -299,6 +321,7 @@
             </div>
         </div>
     </main>
+
     <script>
         // ================= STATE =================
         let rawData = [];
@@ -308,15 +331,15 @@
         let textColumns = [];
         let dateColumns = [];
         let categoryColumn = null;
-        let serviceColumn = null;
         let valueColumn = null;
         let dateColumn = null;
         let allCharts = {};
         let currentPage = 1;
         let rowsPerPage = 50;
         let activeFilters = {};
+        let chartsCreated = false;
 
-        console.log("✅ MIS Analytics System Loaded");
+        console.log("✅ Universal MIS System Loaded");
 
         // ================= SAFE DOM ACCESS =================
         function $$(id) {
@@ -352,19 +375,34 @@
             }
         }
 
-        function showAlert(message, isError = false) {
+        function showAlert(message, isError = true) {
             const alertBox = $$('alertBox');
+            const alertContent = $$('alertContent');
             const alertMessage = $$('alertMessage');
-            if (alertBox && alertMessage) {
+            if (alertBox && alertContent && alertMessage) {
                 alertBox.classList.remove('hidden');
                 alertMessage.innerText = message;
-                alertBox.className = isError ? 'mb-6 bg-red-100 border-2 border-red-500 p-4 rounded' : 'mb-6 bg-yellow-100 border-2 border-yellow-500 p-4 rounded';
+                alertContent.className = isError ? 'alert-box' : 'success-box';
             }
         }
 
         function hideAlert() {
             const alertBox = $$('alertBox');
             if (alertBox) alertBox.classList.add('hidden');
+        }
+
+        function showSuccess(message) {
+            const successBox = $$('successBox');
+            const successMessage = $$('successMessage');
+            if (successBox && successMessage) {
+                successBox.classList.remove('hidden');
+                successMessage.innerText = message;
+            }
+        }
+
+        function hideSuccess() {
+            const successBox = $$('successBox');
+            if (successBox) successBox.classList.add('hidden');
         }
 
         function showDebugInfo() {
@@ -381,6 +419,7 @@
                 setText('debugNumeric', numericColumns.length);
                 setText('debugRecords', rawData.length);
                 setText('debugFiltered', filteredData.length);
+                setText('debugCharts', chartsCreated ? 'Created ✓' : 'Not Created');
             }
         }
 
@@ -403,6 +442,8 @@
                 export: 'Export Reports'
             };
             setText('pageTitle', titles[section] || section);
+
+            // Wait for DOM to render, then create charts
             setTimeout(() => {
                 console.log(`📊 Rendering ${section} charts...`);
                 if (section === 'dashboard') {
@@ -413,11 +454,24 @@
                 if (section === 'analysis') updateRatioAnalysis();
                 if (section === 'correlation') generateCorrelationMatrix();
                 if (section === 'trends') generateTrendAnalysis();
-            }, 200);
+            }, 300);
         }
 
         function resetApp() {
             if (confirm("Reset all data and filters?")) location.reload();
+        }
+
+        // ================= FORCE CHART RENDER =================
+        function forceRenderCharts() {
+            console.log('🔨 Force rendering charts...');
+            showSuccess('Force rendering charts...');
+            setTimeout(() => {
+                generateDashboardCharts();
+                generateRatioAnalysis();
+                generateCorrelationMatrix();
+                generateTrendAnalysis();
+                showSuccess('Charts rendered! Check Debug Panel for status.');
+            }, 500);
         }
 
         // ================= FILE HANDLING =================
@@ -445,10 +499,10 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // ================= DEMO DATA (Matches Your Format: 15-Feb-21) =================
+        // ================= DEMO DATA =================
         function loadDemoData() {
             console.log('⚡ Loading demo data...');
-            showLoader(true, "Generating Demo Data...", "Simulating your data format...");
+            showLoader(true, "Generating Demo Data...", "Simulating data...");
             setTimeout(() => {
                 headers = ['Invoice Date', 'Invoice No', 'Customer Name', 'Product / Service', 'Quantity', 'Unit Price (PKR)', 'Gross Amount (PKR)', 'Sales Tax %', 'Sales Tax Amount (PKR)', 'Net Revenue (PKR)'];
                 const customers = ['Customer 1', 'Customer 2', 'Customer 3', 'Customer 4', 'Customer 5', 'Customer 6', 'Customer 7', 'Customer 8', 'Customer 9', 'Customer 10'];
@@ -515,16 +569,20 @@
             return parseFloat(clean) || 0;
         }
 
-        // ================= IMPROVED DATE DETECTION (Handles 15-Feb-21 format) =================
+        // ================= UNIVERSAL DATE DETECTION =================
         function isValidDate(val) {
             if (!val) return false;
             const str = String(val);
-            // Match DD-MMM-YY format (e.g., 15-Feb-21)
+            // DD-MMM-YY (15-Feb-21)
             if (/^\d{2}-[A-Za-z]{3}-\d{2}$/.test(str)) return true;
-            // Match YYYY-MM-DD format
+            // YYYY-MM-DD (2021-02-15)
             if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return true;
-            // Match DD/MM/YYYY format
+            // DD/MM/YYYY (15/02/2021)
             if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) return true;
+            // MM/DD/YYYY (02/15/2021)
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) return true;
+            // Excel serial date (numbers)
+            if (!isNaN(parseFloat(val)) && isFinite(val) && val > 20000 && val < 60000) return true;
             return false;
         }
 
@@ -533,11 +591,11 @@
             textColumns = [];
             dateColumns = [];
             categoryColumn = null;
-            serviceColumn = null;
             valueColumn = null;
             dateColumn = null;
             const sample = Math.min(rawData.length, 100);
             console.log('🔍 Detecting column types...');
+
             headers.forEach((h, idx) => {
                 const lower = h.toLowerCase();
                 let num = 0, date = 0, text = 0;
@@ -552,10 +610,11 @@
                         text++;
                     }
                 }
+
                 if (num > sample * 0.7) {
                     numericColumns.push({ index: idx, name: h });
-                    // Detect value column (Revenue, Amount, Price, Total)
-                    if (!valueColumn && (lower.includes('revenue') || lower.includes('amount') || lower.includes('price') || lower.includes('total'))) {
+                    // Detect value column (Revenue, Amount, Price, Total, Cost, Value)
+                    if (!valueColumn && (lower.includes('revenue') || lower.includes('amount') || lower.includes('price') || lower.includes('total') || lower.includes('cost') || lower.includes('value'))) {
                         valueColumn = idx;
                         console.log('💰 Value column detected:', h, 'at index', idx);
                     }
@@ -567,19 +626,15 @@
                     }
                 } else {
                     textColumns.push({ index: idx, name: h });
-                    // Detect category column (Customer, Name)
-                    if (!categoryColumn && (lower.includes('customer') || lower.includes('name'))) {
+                    // Detect category column (Customer, Name, Account, Item, Product, Service, Department, Region, Category)
+                    if (!categoryColumn && (lower.includes('customer') || lower.includes('name') || lower.includes('account') || lower.includes('item') || lower.includes('product') || lower.includes('service') || lower.includes('department') || lower.includes('region') || lower.includes('category'))) {
                         categoryColumn = idx;
                         console.log('📂 Category column detected:', h, 'at index', idx);
                     }
-                    // Detect service column (Service, Product)
-                    if (!serviceColumn && (lower.includes('service') || lower.includes('product'))) {
-                        serviceColumn = idx;
-                        console.log('🏷️ Service column detected:', h, 'at index', idx);
-                    }
                 }
             });
-            // Fallbacks
+
+            // Fallbacks - use first available column if detection fails
             if (!valueColumn && numericColumns.length > 0) {
                 valueColumn = numericColumns[numericColumns.length - 1].index;
                 console.log('⚠️ Using fallback value column:', headers[valueColumn]);
@@ -588,11 +643,12 @@
                 categoryColumn = textColumns[0].index;
                 console.log('⚠️ Using fallback category column:', headers[categoryColumn]);
             }
-            if (!serviceColumn && textColumns.length > 1) {
-                serviceColumn = textColumns[1].index;
-                console.log('⚠️ Using fallback service column:', headers[serviceColumn]);
+            if (!dateColumn && dateColumns.length > 0) {
+                dateColumn = dateColumns[0].index;
+                console.log('⚠️ Using fallback date column:', headers[dateColumn]);
             }
-            console.log('✅ Column detection complete - Category:', categoryColumn, 'Service:', serviceColumn, 'Value:', valueColumn, 'Date:', dateColumn);
+
+            console.log('✅ Column detection complete - Category:', categoryColumn, 'Value:', valueColumn, 'Date:', dateColumn);
         }
 
         function generateAllAnalysis() {
@@ -608,13 +664,13 @@
         function updateKPIs() {
             setText('kpi-records', filteredData.length.toLocaleString());
             let total = 0;
-            let customers = new Set();
+            let categories = new Set();
             filteredData.forEach(r => {
                 if (valueColumn !== null) total += cleanNumber(r[valueColumn]);
-                if (categoryColumn !== null) customers.add(r[categoryColumn]);
+                if (categoryColumn !== null) categories.add(r[categoryColumn]);
             });
             setText('kpi-total', total > 1000000 ? (total / 1000000).toFixed(2) + 'M' : total.toFixed(2));
-            setText('kpi-customers', customers.size);
+            setText('kpi-categories', categories.size);
             setText('kpi-avg', (total / (filteredData.length || 1)).toFixed(0));
         }
 
@@ -709,15 +765,18 @@
             generateAllAnalysis();
         }
 
-        // ================= CHARTS =================
+        // ================= CHARTS - WITH EXPLICIT DIMENSIONS =================
         function generateDashboardCharts() {
-            console.log('📊 Dashboard Charts - Category:', categoryColumn, 'Service:', serviceColumn, 'Value:', valueColumn, 'Date:', dateColumn);
+            console.log('📊 Dashboard Charts - Category:', categoryColumn, 'Value:', valueColumn, 'Date:', dateColumn);
+            chartsCreated = false;
+
             if (!categoryColumn || !valueColumn) {
                 console.log('⚠️ Cannot generate charts - missing category or value column');
-                showAlert("Cannot generate charts - Please check if your data has Category (text) and Value (numeric) columns", false);
+                showAlert("Cannot generate charts - Category or Value column not detected. Check Debug Panel.", false);
                 return;
             }
-            // Top Customers by Revenue
+
+            // Top Contributors by Category
             const agg = {};
             filteredData.forEach(r => {
                 const k = r[categoryColumn] || "Unknown";
@@ -727,16 +786,24 @@
             const sorted = Object.entries(agg).sort((a, b) => b[1] - a[1]).slice(0, 10);
             const labels = sorted.map(i => i[0]);
             const data = sorted.map(i => i[1]);
-            // Main Bar Chart
+
+            // Main Bar Chart - WITH EXPLICIT CANVAS SIZE
             const mainBarCanvas = $$('mainBarChart');
             if (mainBarCanvas) {
                 if (allCharts.mainBar) allCharts.mainBar.destroy();
                 try {
+                    mainBarCanvas.style.width = '100%';
+                    mainBarCanvas.style.height = '300px';
                     allCharts.mainBar = new Chart(mainBarCanvas, {
                         type: 'bar',
                         data: {
                             labels: labels,
-                            datasets: [{ label: 'Revenue (PKR)', data: data, backgroundColor: '#3b82f6', borderRadius: 4 }]
+                            datasets: [{
+                                label: 'Value',
+                                data: data,
+                                backgroundColor: '#3b82f6',
+                                borderRadius: 4
+                            }]
                         },
                         options: {
                             responsive: true,
@@ -753,84 +820,101 @@
                         }
                     });
                     console.log('✅ Main Bar Chart created');
+                    chartsCreated = true;
                 } catch (err) {
                     console.error('❌ Main Bar Chart error:', err);
                     showAlert("Error creating Main Bar Chart: " + err.message, true);
                 }
             }
-            // Pie Chart (by Service)
-            if (serviceColumn !== null) {
-                const svcAgg = {};
-                filteredData.forEach(r => {
-                    const k = r[serviceColumn] || "Unknown";
-                    const v = cleanNumber(r[valueColumn]);
-                    svcAgg[k] = (svcAgg[k] || 0) + v;
-                });
-                const svcSorted = Object.entries(svcAgg).sort((a, b) => b[1] - a[1]);
-                const svcLabels = svcSorted.map(i => i[0]);
-                const svcData = svcSorted.map(i => i[1]);
-                const pieCanvas = $$('pieChart');
-                if (pieCanvas) {
-                    if (allCharts.pie) allCharts.pie.destroy();
-                    try {
-                        allCharts.pie = new Chart(pieCanvas, {
-                            type: 'doughnut',
-                            data: {
-                                labels: svcLabels,
-                                datasets: [{ data: svcData, backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'] }]
-                            },
-                            options: { responsive: true, maintainAspectRatio: false }
-                        });
-                        console.log('✅ Pie Chart created');
-                    } catch (err) {
-                        console.error('❌ Pie Chart error:', err);
-                    }
+
+            // Pie Chart
+            const pieCanvas = $$('pieChart');
+            if (pieCanvas) {
+                if (allCharts.pie) allCharts.pie.destroy();
+                try {
+                    pieCanvas.style.width = '100%';
+                    pieCanvas.style.height = '300px';
+                    allCharts.pie = new Chart(pieCanvas, {
+                        type: 'doughnut',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: data,
+                                backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false
+                        }
+                    });
+                    console.log('✅ Pie Chart created');
+                    chartsCreated = true;
+                } catch (err) {
+                    console.error('❌ Pie Chart error:', err);
                 }
             }
+
             // Histogram
             if (valueColumn !== null) {
                 const vals = filteredData.map(r => cleanNumber(r[valueColumn]));
-                const bins = 10;
-                const min = Math.min(...vals), max = Math.max(...vals);
-                const binSize = (max - min) / bins;
-                const hist = new Array(bins).fill(0);
-                vals.forEach(v => {
-                    const b = Math.min(Math.floor((v - min) / binSize), bins - 1);
-                    hist[b]++;
-                });
-                const histogramCanvas = $$('histogramChart');
-                if (histogramCanvas) {
-                    if (allCharts.histogram) allCharts.histogram.destroy();
-                    try {
-                        allCharts.histogram = new Chart(histogramCanvas, {
-                            type: 'bar',
-                            data: {
-                                labels: hist.map((_, i) => `${(min + i * binSize).toFixed(0)}`),
-                                datasets: [{ label: 'Frequency', data: hist, backgroundColor: '#8b5cf6' }]
-                            },
-                            options: { responsive: true, maintainAspectRatio: false }
-                        });
-                        console.log('✅ Histogram Chart created');
-                    } catch (err) {
-                        console.error('❌ Histogram Chart error:', err);
+                if (vals.length > 0) {
+                    const bins = 10;
+                    const min = Math.min(...vals);
+                    const max = Math.max(...vals);
+                    const binSize = (max - min) / bins;
+                    const hist = new Array(bins).fill(0);
+                    vals.forEach(v => {
+                        const b = Math.min(Math.floor((v - min) / binSize), bins - 1);
+                        hist[b]++;
+                    });
+                    const histogramCanvas = $$('histogramChart');
+                    if (histogramCanvas) {
+                        if (allCharts.histogram) allCharts.histogram.destroy();
+                        try {
+                            histogramCanvas.style.width = '100%';
+                            histogramCanvas.style.height = '300px';
+                            allCharts.histogram = new Chart(histogramCanvas, {
+                                type: 'bar',
+                                data: {
+                                    labels: hist.map((_, i) => `${(min + i * binSize).toFixed(0)}`),
+                                    datasets: [{
+                                        label: 'Frequency',
+                                        data: hist,
+                                        backgroundColor: '#8b5cf6'
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false
+                                }
+                            });
+                            console.log('✅ Histogram Chart created');
+                            chartsCreated = true;
+                        } catch (err) {
+                            console.error('❌ Histogram Chart error:', err);
+                        }
                     }
                 }
             }
-            // Trend Chart (Monthly)
+
+            // Trend Chart
             if (dateColumn !== null && valueColumn !== null) {
                 const periodData = {};
                 filteredData.forEach(r => {
                     const d = String(r[dateColumn]);
-                    // Handle DD-MMM-YY format
                     let p = '';
+                    // Handle DD-MMM-YY format
                     if (/^\d{2}-[A-Za-z]{3}-\d{2}$/.test(d)) {
                         const parts = d.split('-');
-                        const day = parts[0];
                         const month = parts[1];
                         const year = parts[2];
                         p = `20${year}-${month}`;
                     } else if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
                         p = d.slice(0, 7);
+                    } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(d)) {
+                        const parts = d.split('/');
+                        p = `${parts[2]}-${parts[1]}`;
                     }
                     if (p) {
                         periodData[p] = (periodData[p] || 0) + cleanNumber(r[valueColumn]);
@@ -839,23 +923,37 @@
                 const sortedPeriods = Object.keys(periodData).sort();
                 const trendData = sortedPeriods.map(p => periodData[p]);
                 const trendCanvas = $$('trendChart');
-                if (trendCanvas) {
+                if (trendCanvas && sortedPeriods.length > 0) {
                     if (allCharts.trend) allCharts.trend.destroy();
                     try {
+                        trendCanvas.style.width = '100%';
+                        trendCanvas.style.height = '300px';
                         allCharts.trend = new Chart(trendCanvas, {
                             type: 'line',
                             data: {
                                 labels: sortedPeriods,
-                                datasets: [{ label: 'Monthly Revenue (PKR)', data: trendData, borderColor: '#3b82f6', fill: true, backgroundColor: 'rgba(59,130,246,0.1)' }]
+                                datasets: [{
+                                    label: 'Trend',
+                                    data: trendData,
+                                    borderColor: '#3b82f6',
+                                    fill: true,
+                                    backgroundColor: 'rgba(59,130,246,0.1)'
+                                }]
                             },
-                            options: { responsive: true, maintainAspectRatio: false }
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false
+                            }
                         });
                         console.log('✅ Trend Chart created');
+                        chartsCreated = true;
                     } catch (err) {
                         console.error('❌ Trend Chart error:', err);
                     }
                 }
             }
+
+            showDebugInfo();
         }
 
         function generateRatioAnalysis() {
@@ -888,13 +986,22 @@
             if (ratioTrendCanvas) {
                 if (allCharts.ratioTrend) allCharts.ratioTrend.destroy();
                 try {
+                    ratioTrendCanvas.style.width = '100%';
+                    ratioTrendCanvas.style.height = '300px';
                     allCharts.ratioTrend = new Chart(ratioTrendCanvas, {
                         type: 'line',
                         data: {
                             labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                            datasets: [{ label: 'Ratio', data: [1.2, 1.3, 1.25, 1.4, 1.35, 1.45], borderColor: '#3b82f6' }]
+                            datasets: [{
+                                label: 'Ratio',
+                                data: [1.2, 1.3, 1.25, 1.4, 1.35, 1.45],
+                                borderColor: '#3b82f6'
+                            }]
                         },
-                        options: { responsive: true, maintainAspectRatio: false }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false
+                        }
                     });
                     console.log('✅ Ratio Trend Chart created');
                 } catch (err) {
@@ -905,13 +1012,22 @@
             if (ratioBenchmarkCanvas) {
                 if (allCharts.ratioBenchmark) allCharts.ratioBenchmark.destroy();
                 try {
+                    ratioBenchmarkCanvas.style.width = '100%';
+                    ratioBenchmarkCanvas.style.height = '300px';
                     allCharts.ratioBenchmark = new Chart(ratioBenchmarkCanvas, {
                         type: 'bar',
                         data: {
                             labels: ['Our Co.', 'Industry Avg', 'Best in Class'],
-                            datasets: [{ label: 'Ratio', data: [1.45, 1.2, 1.6], backgroundColor: ['#3b82f6', '#9ca3af', '#10b981'] }]
+                            datasets: [{
+                                label: 'Ratio',
+                                data: [1.45, 1.2, 1.6],
+                                backgroundColor: ['#3b82f6', '#9ca3af', '#10b981']
+                            }]
                         },
-                        options: { responsive: true, maintainAspectRatio: false }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false
+                        }
                     });
                     console.log('✅ Ratio Benchmark Chart created');
                 } catch (err) {
@@ -948,13 +1064,22 @@
             if (positiveCorrCanvas) {
                 if (allCharts.positiveCorr) allCharts.positiveCorr.destroy();
                 try {
+                    positiveCorrCanvas.style.width = '100%';
+                    positiveCorrCanvas.style.height = '300px';
                     allCharts.positiveCorr = new Chart(positiveCorrCanvas, {
                         type: 'bar',
                         data: {
                             labels: ['Col1 vs Col2', 'Col1 vs Col3', 'Col2 vs Col3'],
-                            datasets: [{ label: 'Correlation', data: [0.8, 0.6, 0.4], backgroundColor: '#10b981' }]
+                            datasets: [{
+                                label: 'Correlation',
+                                data: [0.8, 0.6, 0.4],
+                                backgroundColor: '#10b981'
+                            }]
                         },
-                        options: { responsive: true, maintainAspectRatio: false }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false
+                        }
                     });
                     console.log('✅ Positive Correlation Chart created');
                 } catch (err) {
@@ -965,13 +1090,22 @@
             if (negativeCorrCanvas) {
                 if (allCharts.negativeCorr) allCharts.negativeCorr.destroy();
                 try {
+                    negativeCorrCanvas.style.width = '100%';
+                    negativeCorrCanvas.style.height = '300px';
                     allCharts.negativeCorr = new Chart(negativeCorrCanvas, {
                         type: 'bar',
                         data: {
                             labels: ['Col1 vs Col4', 'Col2 vs Col5'],
-                            datasets: [{ label: 'Correlation', data: [0.7, 0.5], backgroundColor: '#ef4444' }]
+                            datasets: [{
+                                label: 'Correlation',
+                                data: [0.7, 0.5],
+                                backgroundColor: '#ef4444'
+                            }]
                         },
-                        options: { responsive: true, maintainAspectRatio: false }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false
+                        }
                     });
                     console.log('✅ Negative Correlation Chart created');
                 } catch (err) {
@@ -998,6 +1132,9 @@
                     p = `20${year}-${month}`;
                 } else if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
                     p = d.slice(0, 7);
+                } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(d)) {
+                    const parts = d.split('/');
+                    p = `${parts[2]}-${parts[1]}`;
                 }
                 if (p) {
                     periodData[p] = (periodData[p] || 0) + cleanNumber(r[valueColumn]);
@@ -1005,57 +1142,90 @@
             });
             const sortedPeriods = Object.keys(periodData).sort();
             const trendData = sortedPeriods.map(p => periodData[p]);
-            // Multi Trend Chart
             const multiTrendCanvas = $$('multiTrendChart');
             if (multiTrendCanvas) {
                 if (allCharts.multiTrend) allCharts.multiTrend.destroy();
                 try {
+                    multiTrendCanvas.style.width = '100%';
+                    multiTrendCanvas.style.height = '300px';
                     allCharts.multiTrend = new Chart(multiTrendCanvas, {
                         type: 'line',
                         data: {
                             labels: sortedPeriods,
-                            datasets: [{ label: 'Trend', data: trendData, borderColor: '#3b82f6', fill: true, backgroundColor: 'rgba(59,130,246,0.1)' }]
+                            datasets: [{
+                                label: 'Trend',
+                                data: trendData,
+                                borderColor: '#3b82f6',
+                                fill: true,
+                                backgroundColor: 'rgba(59,130,246,0.1)'
+                            }]
                         },
-                        options: { responsive: true, maintainAspectRatio: false }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false
+                        }
                     });
                     console.log('✅ Multi Trend Chart created');
                 } catch (err) {
                     console.error('❌ Multi Trend Chart error:', err);
                 }
             }
-            // Moving Average Chart
             const movingAvgCanvas = $$('movingAvgChart');
             if (movingAvgCanvas) {
                 if (allCharts.movingAvg) allCharts.movingAvg.destroy();
                 try {
+                    movingAvgCanvas.style.width = '100%';
+                    movingAvgCanvas.style.height = '300px';
                     allCharts.movingAvg = new Chart(movingAvgCanvas, {
                         type: 'line',
                         data: {
                             labels: trendData.map((_, i) => i + 1),
                             datasets: [
-                                { label: 'Actual', data: trendData, borderColor: '#3b82f6' },
-                                { label: 'MA', data: trendData.map((v, i, a) => a.slice(Math.max(0, i - 4), i + 1).reduce((s, x) => s + x, 0) / Math.min(i + 1, 5)), borderColor: '#10b981', borderDash: [5, 5] }
+                                {
+                                    label: 'Actual',
+                                    data: trendData,
+                                    borderColor: '#3b82f6'
+                                },
+                                {
+                                    label: 'MA',
+                                    data: trendData.map((v, i, a) => a.slice(Math.max(0, i - 4), i + 1).reduce((s, x) => s + x, 0) / Math.min(i + 1, 5)),
+                                    borderColor: '#10b981',
+                                    borderDash: [5, 5]
+                                }
                             ]
                         },
-                        options: { responsive: true, maintainAspectRatio: false }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false
+                        }
                     });
                     console.log('✅ Moving Avg Chart created');
                 } catch (err) {
                     console.error('❌ Moving Avg Chart error:', err);
                 }
             }
-            // Seasonality Chart
             const seasonalityCanvas = $$('seasonalityChart');
             if (seasonalityCanvas) {
                 if (allCharts.seasonality) allCharts.seasonality.destroy();
                 try {
+                    seasonalityCanvas.style.width = '100%';
+                    seasonalityCanvas.style.height = '300px';
                     allCharts.seasonality = new Chart(seasonalityCanvas, {
                         type: 'line',
                         data: {
                             labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                            datasets: [{ label: 'Monthly', data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], borderColor: '#8b5cf6', fill: true, backgroundColor: 'rgba(139, 92, 246, 0.1)' }]
+                            datasets: [{
+                                label: 'Monthly',
+                                data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                                borderColor: '#8b5cf6',
+                                fill: true,
+                                backgroundColor: 'rgba(139, 92, 246, 0.1)'
+                            }]
                         },
-                        options: { responsive: true, maintainAspectRatio: false }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false
+                        }
                     });
                     console.log('✅ Seasonality Chart created');
                 } catch (err) {
