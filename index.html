@@ -1133,3 +1133,171 @@
     </script>
 </body>
 </html>
+<!-- ========================================== -->
+<!-- START: APP ENHANCEMENT PACK (Paste Before </body>) -->
+<!-- ========================================== -->
+
+<!-- 1. Additional Styles for Dark Mode & Print -->
+<style>
+    /* Dark Mode Overrides */
+    body.dark-theme {
+        background: #111827;
+        color: #e5e7eb;
+    }
+    body.dark-theme .sidebar {
+        background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+        border-right: 1px solid #374151;
+    }
+    body.dark-theme .nav-btn:hover { background: rgba(255,255,255,0.05); }
+    body.dark-theme .nav-btn.active-nav { background: rgba(255,255,255,0.1); border-left-color: #60a5fa; }
+    body.dark-theme header { background: #1f2937; border-bottom-color: #374151; }
+    body.dark-theme h2, body.dark-theme h1, body.dark-theme h3, body.dark-theme h4, body.dark-theme p { color: #f3f4f6; }
+    body.dark-theme .card { background: #1f2937; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+    body.dark-theme th { background-color: #374151; color: #f3f4f6; }
+    body.dark-theme tr:hover td { background-color: #374151; }
+    body.dark-theme td { color: #d1d5db; border-bottom-color: #374151; }
+    body.dark-theme input, body.dark-theme select { background: #374151; color: white; border-color: #4b5563; }
+    
+    /* Print Styles */
+    @media print {
+        .sidebar, header, .btn-no-print, #loadingOverlay, #alertContainer, .btn-export, .btn-dark, .btn-print { display: none !important; }
+        .section { display: block !important; }
+        #section-upload { display: none !important; }
+        body { background: white; color: black; }
+        .card { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
+        .chart-container { height: 300px; }
+    }
+</style>
+
+<!-- 2. Enhancement Logic -->
+<script>
+(function() {
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initEnhancements);
+    } else {
+        initEnhancements();
+    }
+
+    function initEnhancements() {
+        // --- A. Dark Mode Toggle ---
+        const headerActions = document.querySelector('header .flex.space-x-2');
+        if (headerActions) {
+            const darkBtn = document.createElement('button');
+            darkBtn.className = 'btn-dark bg-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-300 text-sm transition';
+            darkBtn.innerHTML = '<i class="fas fa-moon mr-1"></i> Dark';
+            darkBtn.onclick = toggleDarkMode;
+            headerActions.appendChild(darkBtn);
+
+            const printBtn = document.createElement('button');
+            printBtn.className = 'btn-print bg-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-300 text-sm transition';
+            printBtn.innerHTML = '<i class="fas fa-print mr-1"></i> Print';
+            printBtn.onclick = () => window.print();
+            headerActions.appendChild(printBtn);
+        }
+
+        // --- B. Export Data Button (In Dashboard or Data View) ---
+        // We add it to the header as well for accessibility
+        if (headerActions) {
+            const exportBtn = document.createElement('button');
+            exportBtn.className = 'btn-export bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 text-sm transition';
+            exportBtn.innerHTML = '<i class="fas fa-file-excel mr-1"></i> Export';
+            exportBtn.onclick = exportToExcel;
+            headerActions.appendChild(exportBtn);
+        }
+
+        // --- C. Smart Search for Data View ---
+        const dataSection = document.getElementById('section-data');
+        if (dataSection) {
+            const tableHeaderDiv = dataSection.querySelector('.flex.justify-between.items-center.mb-4');
+            if (tableHeaderDiv) {
+                const searchWrapper = document.createElement('div');
+                searchWrapper.className = 'flex items-center space-x-2';
+                searchWrapper.innerHTML = `
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
+                        <input type="text" id="dataSearchInput" placeholder="Search data..." 
+                               class="pl-8 pr-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button id="clearSearchBtn" class="hidden text-xs text-gray-500 hover:text-red-500 underline">Clear</button>
+                `;
+                // Insert search before the rowsPerPage select
+                tableHeaderDiv.insertBefore(searchWrapper, tableHeaderDiv.lastElementChild);
+
+                // Search Logic
+                const searchInput = document.getElementById('dataSearchInput');
+                const clearBtn = document.getElementById('clearSearchBtn');
+                
+                searchInput.addEventListener('input', function() {
+                    const term = this.value.toLowerCase();
+                    const originalData = STATE.rawData; // Keep original safe
+                    
+                    if (term === '') {
+                        STATE.filteredData = [...originalData];
+                        clearBtn.classList.add('hidden');
+                    } else {
+                        // Filter based on all columns
+                        STATE.filteredData = originalData.filter(row => 
+                            row.some(cell => String(cell).toLowerCase().includes(term))
+                        );
+                        clearBtn.classList.remove('hidden');
+                        // Reset pagination to page 1 on search
+                        STATE.currentPage = 1;
+                    }
+                    renderTable();
+                });
+
+                clearBtn.addEventListener('click', function() {
+                    searchInput.value = '';
+                    searchInput.dispatchEvent(new Event('input'));
+                });
+            }
+        }
+
+        console.log('Enhancement Pack Loaded Successfully!');
+    }
+
+    // --- Dark Mode Function ---
+    window.toggleDarkMode = function() {
+        document.body.classList.toggle('dark-theme');
+        const btn = document.querySelector('.btn-dark');
+        if (document.body.classList.contains('dark-theme')) {
+            btn.innerHTML = '<i class="fas fa-sun mr-1"></i> Light';
+            btn.className = 'btn-dark bg-yellow-400 text-gray-900 px-3 py-2 rounded-lg hover:bg-yellow-500 text-sm transition';
+        } else {
+            btn.innerHTML = '<i class="fas fa-moon mr-1"></i> Dark';
+            btn.className = 'btn-dark bg-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-300 text-sm transition';
+        }
+        // Re-render charts to adjust colors if needed (optional, Chart.js handles background usually)
+        if (STATE.charts.bar) STATE.charts.bar.update();
+        if (STATE.charts.pie) STATE.charts.pie.update();
+    };
+
+    // --- Export to Excel Function ---
+    window.exportToExcel = function() {
+        if (STATE.filteredData.length === 0) {
+            showAlert('No data to export.', 'warning');
+            return;
+        }
+        const ws = XLSX.utils.json_to_sheet(
+            STATE.filteredData.map(row => {
+                let obj = {};
+                STATE.headers.forEach((h, i) => obj[h] = row[i]);
+                return obj;
+            })
+        );
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Analytics Data");
+        XLSX.writeFile(wb, `MIS_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+        showAlert('Data exported successfully!', 'success');
+    };
+
+    // --- Helper to ensure showAlert exists if not loaded yet ---
+    if (typeof showAlert === 'undefined') {
+        window.showAlert = (msg, type) => alert(msg);
+    }
+})();
+</script>
+<!-- ========================================== -->
+<!-- END: APP ENHANCEMENT PACK -->
+<!-- ========================================== -->
