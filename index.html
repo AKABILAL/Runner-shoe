@@ -1378,79 +1378,268 @@ function renderRatioCharts(ratios, dataType) {
         }
 
         // ==================== TRENDS ====================
-        function renderTrends() {
-            if (STATE.dateCol === null || STATE.valueCol === null) {
-                showAlert('Need date and value columns for trend analysis', 'warning');
-                return;
-            }
-            
-            const periodData = {};
-            STATE.filteredData.forEach(row => {
-                const period = extractPeriod(row[STATE.dateCol]);
-                const val = parseNumber(row[STATE.valueCol]);
-                if (period && !isNaN(val)) {
-                    periodData[period] = (periodData[period] || 0) + val;
-                }
-            });
-            
-            const sorted = Object.keys(periodData).sort();
-            const values = sorted.map(p => periodData[p]);
-            
-            createSimpleChart('multiTrendChart', 'line', sorted, values, '#3b82f6', true);
-            
-            // Moving average
-            const ma = values.map((v, i, arr) => {
-                const slice = arr.slice(Math.max(0, i-4), i+1);
-                return slice.reduce((a,b) => a+b, 0) / slice.length;
-            });
-            
-            const maCanvas = $('movingAvgChart');
-            if (maCanvas) {
-                if (STATE.charts.movingAvg) STATE.charts.movingAvg.destroy();
-                const ctx = maCanvas.getContext('2d');
-                STATE.charts.movingAvg = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: sorted,
-                        datasets: [
-                            { label: 'Actual', data: values, borderColor: '#3b82f6' },
-                            { label: 'MA(5)', data: ma, borderColor: '#10b981', borderDash: [5,5] }
-                        ]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false }
-                });
-            }
-            
-            createSimpleChart('seasonalityChart', 'line', ['J','F','M','A','M','J','J','A','S','O','N','D'],
-                             [10,12,15,18,22,25,28,26,23,19,14,11], '#8b5cf6', true);
-        }
+        // ==================== TREND ANALYSIS (SMART) ====================
+function renderTrends() {
+    // Try to detect trends even without perfect date column
+    const trendData = generateSmartTrendData();
+    
+    if (trendData.length === 0) {
+        $('multiTrendChart').parentNode.innerHTML = '<p class="text-gray-500 text-center py-8">Not enough numeric data to create trends</p>';
+        $('movingAvgChart').parentNode.innerHTML = '<p class="text-gray-500 text-center py-8">Not enough data for moving average</p>';
+        $('seasonalityChart').parentNode.innerHTML = '<p class="text-gray-500 text-center py-8">Not enough data for seasonality</p>';
+        return;
+    }
 
-        function createSimpleChart(canvasId, type, labels, data, color, fill = false) {
-            const canvas = $(canvasId);
-            if (!canvas) return;
-            
-            if (STATE.charts[canvasId]) STATE.charts[canvasId].destroy();
-            
-            const ctx = canvas.getContext('2d');
-            STATE.charts[canvasId] = new Chart(ctx, {
-                type: type,
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Value',
-                        data: data,
-                        backgroundColor: type === 'bar' ? color : (fill ? color + '33' : color),
-                        borderColor: color,
-                        fill: fill,
-                        tension: 0.4
-                    }]
+    // Multi-Variable Trend
+    const ctx1 = $('multiTrendChart').getContext('2d');
+    if (STATE.charts.multiTrend) STATE.charts.multiTrend.destroy();
+    STATE.charts.multiTrend = new Chart(ctx1, {
+        type: 'line',
+        data: {
+            labels: trendData.labels,
+            datasets: trendData.datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true },
+                title: { display: true, text: 'Value Trend Over Time/Sequence' }
+            },
+            scales: {
+                y: { beginAtZero: false }
+            }
+        }
+    });
+
+    // Moving Average
+    const maValues = calculateMovingAverage(trendData.datasets[0].data, 5);
+    const ctx2 = $('movingAvgChart').getContext('2d');
+    if (STATE.charts.movingAvg) STATE.charts.movingAvg.destroy();
+    STATE.charts.movingAvg = new Chart(ctx2, {
+        type: 'line',
+        data: {
+            labels: trendData.labels,
+            datasets: [
+                {
+                    label: 'Actual Values',
+                    data: trendData.datasets[0].data,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59,130,246,0.1)',
+                    fill: true,
+                    tension: 0.4
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false
+                {
+                    label: '5-Period Moving Average',
+                    data: maValues,
+                    borderColor: '#10b981',
+                    borderDash: [5, 5],
+                    tension: 0.4
                 }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: { display: true, text: 'Moving Average Trend' }
+            }
+        }
+    });
+
+    // Seasonality (if date column exists)
+    if (STATE.dateCol !== null) {
+        const seasonalityData = calculateSeasonality();
+        const ctx3 = $('seasonalityChart').getContext('2d');
+        if (STATE.charts.seasonality) STATE.charts.seasonality.destroy();
+        STATE.charts.seasonality = new Chart(ctx3, {
+            type: 'bar',
+            data: {
+                labels: seasonalityData.labels,
+                datasets: [{
+                    label: 'Average Value by Period',
+                    data: seasonalityData.values,
+                    backgroundColor: '#8b5cf6',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Seasonality Pattern' }
+                }
+            }
+        });
+    } else {
+        $('seasonalityChart').parentNode.innerHTML = '<p class="text-gray-500 text-center py-8">Date column required for seasonality analysis</p>';
+    }
+}
+
+// ==================== SMART TREND GENERATION ====================
+function generateSmartTrendData() {
+    const datasets = [];
+    let labels = [];
+
+    // If we have a date column, use it
+    if (STATE.dateCol !== null) {
+        const periodData = {};
+        STATE.filteredData.forEach(row => {
+            const period = extractPeriod(row[STATE.dateCol]);
+            if (period) {
+                if (!periodData[period]) periodData[period] = 0;
+                if (STATE.valueCol !== null) {
+                    periodData[period] += parseNumber(row[STATE.valueCol]) || 0;
+                } else if (STATE.numericCols.length > 0) {
+                    periodData[period] += parseNumber(row[STATE.numericCols[0].index]) || 0;
+                }
+            }
+        });
+
+        labels = Object.keys(periodData).sort();
+        const values = labels.map(p => periodData[p]);
+        
+        datasets.push({
+            label: STATE.valueCol !== null ? STATE.headers[STATE.valueCol] : 'Value',
+            data: values,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59,130,246,0.1)',
+            fill: true,
+            tension: 0.4
+        });
+    }
+    // If we have a category column, group by category
+    else if (STATE.categoryCol !== null) {
+        const categoryData = {};
+        STATE.filteredData.forEach(row => {
+            const cat = String(row[STATE.categoryCol] || 'Unknown');
+            if (!categoryData[cat]) categoryData[cat] = 0;
+            if (STATE.valueCol !== null) {
+                categoryData[cat] += parseNumber(row[STATE.valueCol]) || 0;
+            } else if (STATE.numericCols.length > 0) {
+                categoryData[cat] += parseNumber(row[STATE.numericCols[0].index]) || 0;
+            }
+        });
+
+        labels = Object.keys(categoryData).sort();
+        const values = labels.map(c => categoryData[c]);
+
+        datasets.push({
+            label: STATE.headers[STATE.categoryCol] || 'Category',
+            data: values,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16,185,129,0.1)',
+            fill: true,
+            tension: 0.4
+        });
+    }
+    // Fallback: Use row indices as sequence
+    else {
+        const values = STATE.filteredData.map((row, i) => {
+            if (STATE.valueCol !== null) {
+                return parseNumber(row[STATE.valueCol]) || 0;
+            } else if (STATE.numericCols.length > 0) {
+                return parseNumber(row[STATE.numericCols[0].index]) || 0;
+            }
+            return 0;
+        });
+
+        labels = STATE.filteredData.map((row, i) => `Record ${i + 1}`);
+
+        datasets.push({
+            label: STATE.valueCol !== null ? STATE.headers[STATE.valueCol] : 'Value',
+            data: values,
+            borderColor: '#8b5cf6',
+            backgroundColor: 'rgba(139,92,246,0.1)',
+            fill: true,
+            tension: 0.4
+        });
+    }
+
+    // Add additional numeric columns as separate lines if available
+    STATE.numericCols.slice(0, 3).forEach((col, idx) => {
+        if (col.index !== STATE.valueCol && col.index !== STATE.categoryCol) {
+            const values = STATE.filteredData.map(row => parseNumber(row[col.index]) || 0);
+            datasets.push({
+                label: col.name,
+                data: values,
+                borderColor: ['#ef4444', '#f59e0b', '#06b6d4'][idx],
+                tension: 0.4
             });
         }
+    });
+
+    return { labels, datasets };
+}
+
+// ==================== MOVING AVERAGE CALCULATION ====================
+function calculateMovingAverage(data, period) {
+    const result = [];
+    for (let i = 0; i < data.length; i++) {
+        const start = Math.max(0, i - period + 1);
+        const slice = data.slice(start, i + 1);
+        const avg = slice.reduce((a, b) => a + b, 0) / slice.length;
+        result.push(avg);
+    }
+    return result;
+}
+
+// ==================== SEASONALITY CALCULATION ====================
+function calculateSeasonality() {
+    const seasonData = {};
+    
+    STATE.filteredData.forEach(row => {
+        if (STATE.dateCol !== null) {
+            const dateStr = String(row[STATE.dateCol] || '');
+            const month = extractMonth(dateStr);
+            if (month) {
+                if (!seasonData[month]) seasonData[month] = { sum: 0, count: 0 };
+                if (STATE.valueCol !== null) {
+                    seasonData[month].sum += parseNumber(row[STATE.valueCol]) || 0;
+                } else if (STATE.numericCols.length > 0) {
+                    seasonData[month].sum += parseNumber(row[STATE.numericCols[0].index]) || 0;
+                }
+                seasonData[month].count++;
+            }
+        }
+    });
+
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const labels = months;
+    const values = months.map(m => {
+        if (seasonData[m]) {
+            return seasonData[m].count > 0 ? seasonData[m].sum / seasonData[m].count : 0;
+        }
+        return 0;
+    });
+
+    return { labels, values };
+}
+
+// ==================== MONTH EXTRACTION ====================
+function extractMonth(dateStr) {
+    if (!dateStr) return null;
+    const str = String(dateStr).trim();
+    
+    // Check for month name patterns
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    for (let i = 0; i < 12; i++) {
+        if (str.toLowerCase().includes(months[i].toLowerCase())) {
+            return months[i];
+        }
+    }
+    
+    // Check for numeric month (MM or YYYY-MM)
+    const monthMatch = str.match(/-(\d{2})-/);
+    if (monthMatch) {
+        const monthNum = parseInt(monthMatch[1]) - 1;
+        if (monthNum >= 0 && monthNum < 12) {
+            return months[monthNum];
+        }
+    }
+    
+    return null;
+}
 
         // ==================== DATA TABLE ====================
         function renderTable() {
